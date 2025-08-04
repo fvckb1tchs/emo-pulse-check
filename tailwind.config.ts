@@ -61,6 +61,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// EmoTeen custom colors
+				emoteen: {
+					teal: 'hsl(var(--emoteen-teal))',
+					blue: 'hsl(var(--emoteen-blue))',
+					green: 'hsl(var(--emoteen-green))',
+					red: 'hsl(var(--emoteen-red))',
+					yellow: 'hsl(var(--emoteen-yellow))'
 				}
 			},
 			borderRadius: {

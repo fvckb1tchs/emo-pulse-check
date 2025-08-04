@@ -14,7 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      escolas: {
+        Row: {
+          codigo_acesso: string
+          created_at: string
+          email_admin: string
+          id: string
+          nome: string
+          senha_admin: string
+        }
+        Insert: {
+          codigo_acesso: string
+          created_at?: string
+          email_admin: string
+          id?: string
+          nome: string
+          senha_admin: string
+        }
+        Update: {
+          codigo_acesso?: string
+          created_at?: string
+          email_admin?: string
+          id?: string
+          nome?: string
+          senha_admin?: string
+        }
+        Relationships: []
+      }
+      respostas_quiz: {
+        Row: {
+          aluno_nome: string
+          data_envio: string
+          encaminhado: boolean
+          escola_id: string
+          id: string
+          pontuacao: number
+          respostas: Json
+          resultado: string
+        }
+        Insert: {
+          aluno_nome: string
+          data_envio?: string
+          encaminhado?: boolean
+          escola_id: string
+          id?: string
+          pontuacao: number
+          respostas: Json
+          resultado: string
+        }
+        Update: {
+          aluno_nome?: string
+          data_envio?: string
+          encaminhado?: boolean
+          escola_id?: string
+          id?: string
+          pontuacao?: number
+          respostas?: Json
+          resultado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "respostas_quiz_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
