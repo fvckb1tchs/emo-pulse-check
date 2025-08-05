@@ -51,6 +51,7 @@ export type Database = {
           pontuacao: number
           respostas: Json
           resultado: string
+          serie_id: string | null
         }
         Insert: {
           aluno_nome: string
@@ -61,6 +62,7 @@ export type Database = {
           pontuacao: number
           respostas: Json
           resultado: string
+          serie_id?: string | null
         }
         Update: {
           aluno_nome?: string
@@ -71,10 +73,50 @@ export type Database = {
           pontuacao?: number
           respostas?: Json
           resultado?: string
+          serie_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "respostas_quiz_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "respostas_quiz_serie_id_fkey"
+            columns: ["serie_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      series: {
+        Row: {
+          ativa: boolean
+          created_at: string
+          escola_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativa?: boolean
+          created_at?: string
+          escola_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativa?: boolean
+          created_at?: string
+          escola_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_escola_id_fkey"
             columns: ["escola_id"]
             isOneToOne: false
             referencedRelation: "escolas"

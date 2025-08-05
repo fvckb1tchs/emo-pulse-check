@@ -22,8 +22,9 @@ const Quiz = () => {
   useEffect(() => {
     const escolaId = sessionStorage.getItem('escolaId');
     const alunoNome = sessionStorage.getItem('alunoNome');
+    const serieId = sessionStorage.getItem('serieId');
     
-    if (!escolaId || !alunoNome) {
+    if (!escolaId || !alunoNome || !serieId) {
       navigate('/login');
     }
   }, [navigate]);
@@ -128,12 +129,14 @@ const Quiz = () => {
     try {
       const escolaId = sessionStorage.getItem('escolaId');
       const alunoNome = sessionStorage.getItem('alunoNome');
+      const serieId = sessionStorage.getItem('serieId');
 
       const { error } = await supabase
         .from('respostas_quiz')
         .insert({
           aluno_nome: alunoNome,
           escola_id: escolaId,
+          serie_id: serieId,
           respostas: answers,
           resultado: resultadoFinal,
           pontuacao: totalScore,

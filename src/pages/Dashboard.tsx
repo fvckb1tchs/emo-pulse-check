@@ -17,7 +17,10 @@ import {
   CheckCircle,
   AlertTriangle,
   AlertCircle,
-  CalendarPlus
+  CalendarPlus,
+  Plus,
+  Trash2,
+  Settings
 } from "lucide-react";
 import {
   Select,
@@ -33,6 +36,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface RespostaQuiz {
   id: string;
@@ -42,6 +51,14 @@ interface RespostaQuiz {
   pontuacao: number;
   encaminhado: boolean;
   respostas: number[];
+  serie_id?: string;
+}
+
+interface Serie {
+  id: string;
+  nome: string;
+  ativa: boolean;
+  escola_id: string;
 }
 
 const Dashboard = () => {
@@ -49,10 +66,14 @@ const Dashboard = () => {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [respostas, setRespostas] = useState<RespostaQuiz[]>([]);
+  const [series, setSeries] = useState<Serie[]>([]);
   const [filtroResultado, setFiltroResultado] = useState<string>("todos");
+  const [filtroSerie, setFiltroSerie] = useState<string>("todas");
   const [loading, setLoading] = useState(false);
   const [escola, setEscola] = useState<string>("");
+  const [escolaId, setEscolaId] = useState<string>("");
   const [agendandoSessao, setAgendandoSessao] = useState<string | null>(null);
+  const [novaSerie, setNovaSerie] = useState("");
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,6 +100,7 @@ const Dashboard = () => {
       if (senha === 'password') {
         setIsAuthenticated(true);
         setEscola(escolaData.nome);
+        setEscolaId(escolaData.id);
         sessionStorage.setItem('adminAuthenticated', 'true');
         sessionStorage.setItem('escolaAdminId', escolaData.id);
         toast({
@@ -86,6 +108,7 @@ const Dashboard = () => {
           description: `Bem-vindo ao dashboard de ${escolaData.nome}`,
         });
         loadRespostas(escolaData.id);
+        loadSeries(escolaData.id);
       } else {
         toast({
           title: "Senha incorreta",
@@ -109,7 +132,10 @@ const Dashboard = () => {
     try {
       const { data, error } = await supabase
         .from('respostas_quiz')
-        .select('*')
+        .select(`
+          *,
+          series (nome)
+        `)
         .eq('escola_id', escolaId)
         .order('data_envio', { ascending: false });
 
@@ -125,11 +151,27 @@ const Dashboard = () => {
     }
   };
 
+  const loadSeries = async (escolaId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('series')
+        .select('*')
+        .eq('escola_id', escolaId)
+        .order('nome');
+
+      if (error) throw error;
+      setSeries((data || []) as Serie[]);
+    } catch (error) {
+      console.error('Erro ao carregar séries:', error);
+    }
+  };
+
   const handleLogout = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('adminAuthenticated');
     sessionStorage.removeItem('escolaAdminId');
     setRespostas([]);
+    setSeries([]);
     setEmail("");
     setSenha("");
   };
@@ -166,12 +208,68 @@ const Dashboard = () => {
     }
   };
 
+  const handleAdicionarSerie = async () => {
+    if (!novaSerie.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('series')
+        .insert({
+          escola_id: escolaId,
+          nome: novaSerie.trim(),
+          ativa: true
+        });
+
+      if (error) throw error;
+
+      setNovaSerie("");
+      loadSeries(escolaId);
+      toast({
+        title: "Série adicionada! ✅",
+        description: `A série "${novaSerie}" foi criada com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar série:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar a série.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleToggleSerie = async (serieId: string, ativa: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('series')
+        .update({ ativa: !ativa })
+        .eq('id', serieId);
+
+      if (error) throw error;
+
+      loadSeries(escolaId);
+      toast({
+        title: ativa ? "Série desativada" : "Série ativada",
+        description: "Status da série atualizado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar série:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a série.",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     const isAuth = sessionStorage.getItem('adminAuthenticated');
     const escolaId = sessionStorage.getItem('escolaAdminId');
     if (isAuth && escolaId) {
       setIsAuthenticated(true);
+      setEscolaId(escolaId);
       loadRespostas(escolaId);
+      loadSeries(escolaId);
     }
   }, []);
 
@@ -188,9 +286,11 @@ const Dashboard = () => {
     }
   };
 
-  const respostasFiltradas = respostas.filter(resposta => 
-    filtroResultado === "todos" || resposta.resultado === filtroResultado
-  );
+  const respostasFiltradas = respostas.filter(resposta => {
+    const filtroRes = filtroResultado === "todos" || resposta.resultado === filtroResultado;
+    const filtroSer = filtroSerie === "todas" || resposta.serie_id === filtroSerie;
+    return filtroRes && filtroSer;
+  });
 
   const stats = {
     total: respostas.length,
@@ -198,6 +298,12 @@ const Dashboard = () => {
     amarelo: respostas.filter(r => r.resultado === 'amarelo').length,
     vermelho: respostas.filter(r => r.resultado === 'vermelho').length,
     encaminhados: respostas.filter(r => r.encaminhado).length
+  };
+
+  const getSerieNome = (serieId?: string) => {
+    if (!serieId) return 'Série não informada';
+    const serie = series.find(s => s.id === serieId);
+    return serie ? serie.nome : 'Série não encontrada';
   };
 
   if (!isAuthenticated) {
@@ -263,181 +369,282 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emoteen-green" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Verde</p>
-                  <p className="text-2xl font-bold text-emoteen-green">{stats.verde}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabs */}
+        <Tabs defaultValue="respostas" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="respostas">Respostas dos Alunos</TabsTrigger>
+            <TabsTrigger value="series">Gerenciar Séries</TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-emoteen-yellow" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Amarelo</p>
-                  <p className="text-2xl font-bold text-emoteen-yellow">{stats.amarelo}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-emoteen-red" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Vermelho</p>
-                  <p className="text-2xl font-bold text-emoteen-red">{stats.vermelho}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Encaminhados</p>
-                  <p className="text-2xl font-bold">{stats.encaminhados}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="w-5 h-5" />
-                Respostas dos Alunos
-              </CardTitle>
-              <Select value={filtroResultado} onValueChange={setFiltroResultado}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtrar por resultado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os resultados</SelectItem>
-                  <SelectItem value="verde">Verde</SelectItem>
-                  <SelectItem value="amarelo">Amarelo</SelectItem>
-                  <SelectItem value="vermelho">Vermelho</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {respostasFiltradas.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhuma resposta encontrada.</p>
-                </div>
-              ) : (
-                respostasFiltradas.map((resposta) => (
-                  <div key={resposta.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <p className="font-medium">{resposta.aluno_nome}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(resposta.data_envio).toLocaleDateString('pt-BR')}
-                          <span>•</span>
-                          <span>{resposta.pontuacao} pontos</span>
-                          {resposta.encaminhado && (
-                            <>
-                              <span>•</span>
-                              <span className="text-primary">Encaminhado</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {getResultadoBadge(resposta.resultado)}
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4 mr-1" />
-                              Ver Detalhes
-                            </Button>
-                          </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Data</p>
-                                <p className="font-medium">{new Date(resposta.data_envio).toLocaleDateString('pt-BR')}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Resultado</p>
-                                <div className="mt-1">{getResultadoBadge(resposta.resultado)}</div>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Pontuação</p>
-                                <p className="font-medium">{resposta.pontuacao} pontos</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Status</p>
-                                <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminhado'}</p>
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-2">Respostas individuais</p>
-                              <div className="grid grid-cols-5 gap-2">
-                                {resposta.respostas.map((resp, index) => (
-                                  <div key={index} className="text-center p-2 bg-muted rounded">
-                                    <p className="text-xs text-muted-foreground">Q{index + 1}</p>
-                                    <p className="font-bold">{resp}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleAgendarSessao(resposta)}
-                          disabled={agendandoSessao === resposta.id}
-                          className="flex items-center gap-1"
-                        >
-                          <CalendarPlus className="w-4 h-4" />
-                          {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar Sessão'}
-                        </Button>
-                      </div>
+          <TabsContent value="respostas" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total</p>
+                      <p className="text-2xl font-bold">{stats.total}</p>
                     </div>
                   </div>
-                ))
-              )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-emoteen-green" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Verde</p>
+                      <p className="text-2xl font-bold text-emoteen-green">{stats.verde}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-emoteen-yellow" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Amarelo</p>
+                      <p className="text-2xl font-bold text-emoteen-yellow">{stats.amarelo}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-emoteen-red" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Vermelho</p>
+                      <p className="text-2xl font-bold text-emoteen-red">{stats.vermelho}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Encaminhados</p>
+                      <p className="text-2xl font-bold">{stats.encaminhados}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Filters */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Filter className="w-5 h-5" />
+                    Respostas dos Alunos
+                  </CardTitle>
+                  <div className="flex gap-4">
+                    <Select value={filtroSerie} onValueChange={setFiltroSerie}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrar por série" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas as séries</SelectItem>
+                        {series.filter(s => s.ativa).map((serie) => (
+                          <SelectItem key={serie.id} value={serie.id}>
+                            {serie.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={filtroResultado} onValueChange={setFiltroResultado}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrar por resultado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os resultados</SelectItem>
+                        <SelectItem value="verde">Verde</SelectItem>
+                        <SelectItem value="amarelo">Amarelo</SelectItem>
+                        <SelectItem value="vermelho">Vermelho</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {respostasFiltradas.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Nenhuma resposta encontrada.</p>
+                    </div>
+                  ) : (
+                    respostasFiltradas.map((resposta) => (
+                      <div key={resposta.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <p className="font-medium">{resposta.aluno_nome}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(resposta.data_envio).toLocaleDateString('pt-BR')}
+                              <span>•</span>
+                              <span>{getSerieNome(resposta.serie_id)}</span>
+                              <span>•</span>
+                              <span>{resposta.pontuacao} pontos</span>
+                              {resposta.encaminhado && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-primary">Encaminhado</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {getResultadoBadge(resposta.resultado)}
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Ver Detalhes
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Data</p>
+                                      <p className="font-medium">{new Date(resposta.data_envio).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Série</p>
+                                      <p className="font-medium">{getSerieNome(resposta.serie_id)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Resultado</p>
+                                      <div className="mt-1">{getResultadoBadge(resposta.resultado)}</div>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Pontuação</p>
+                                      <p className="font-medium">{resposta.pontuacao} pontos</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Status</p>
+                                      <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminhado'}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-muted-foreground mb-2">Respostas individuais</p>
+                                    <div className="grid grid-cols-7 gap-2">
+                                      {resposta.respostas.map((resp, index) => (
+                                        <div key={index} className="text-center p-2 bg-muted rounded">
+                                          <p className="text-xs text-muted-foreground">Q{index + 1}</p>
+                                          <p className="font-bold">{resp}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleAgendarSessao(resposta)}
+                              disabled={agendandoSessao === resposta.id}
+                              className="flex items-center gap-1"
+                            >
+                              <CalendarPlus className="w-4 h-4" />
+                              {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar Sessão'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="series" className="space-y-6">
+            {/* Adicionar Nova Série */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Adicionar Nova Série
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4">
+                  <Input
+                    placeholder="Digite o nome da série (ex: 1º Ano, 2º Médio)"
+                    value={novaSerie}
+                    onChange={(e) => setNovaSerie(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAdicionarSerie()}
+                  />
+                  <Button onClick={handleAdicionarSerie} disabled={!novaSerie.trim()}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de Séries */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Séries Cadastradas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {series.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Nenhuma série cadastrada.</p>
+                    </div>
+                  ) : (
+                    series.map((serie) => (
+                      <div key={serie.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="font-medium">{serie.nome}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Status: {serie.ativa ? 'Ativa' : 'Inativa'}
+                            </p>
+                          </div>
+                          {serie.ativa && (
+                            <Badge variant="outline" className="text-emoteen-green border-emoteen-green">
+                              Ativa
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          variant={serie.ativa ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => handleToggleSerie(serie.id, serie.ativa)}
+                        >
+                          {serie.ativa ? 'Desativar' : 'Ativar'}
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
