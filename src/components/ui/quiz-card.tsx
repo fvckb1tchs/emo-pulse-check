@@ -23,8 +23,7 @@ const QuizCard = ({
     { value: 1, label: "Nunca", emoji: "😊" },
     { value: 2, label: "Raramente", emoji: "🙂" },
     { value: 3, label: "Às vezes", emoji: "😐" },
-    { value: 4, label: "Frequentemente", emoji: "😟" },
-    { value: 5, label: "Sempre", emoji: "😢" }
+    { value: 4, label: "Frequentemente", emoji: "😟" }
   ];
 
   return (

@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<number[]>(new Array(10).fill(0));
+  const [answers, setAnswers] = useState<number[]>(new Array(35).fill(0));
   const [showResult, setShowResult] = useState(false);
   const [resultado, setResultado] = useState<'verde' | 'amarelo' | 'vermelho'>('verde');
   const [pontuacao, setPontuacao] = useState(0);
@@ -29,16 +29,46 @@ const Quiz = () => {
   }, [navigate]);
 
   const questions = [
-    "Como você se sente quando precisa falar em público ou apresentar algo para a turma?",
-    "Você tem dificuldade para dormir ou relaxar quando algo te preocupa?",
-    "Quando alguém te critica, como você costuma reagir?",
-    "Você se sente sobrecarregado(a) com as atividades escolares ou da vida?",
-    "Como você lida quando as coisas não saem como planejado?",
-    "Você sente que tem apoio suficiente de amigos e família?",
-    "Quando você erra em algo, como se sente sobre si mesmo(a)?",
-    "Você consegue expressar seus sentimentos para pessoas próximas?",
-    "Como você se sente em relação ao seu futuro?",
-    "Você sente que consegue controlar suas emoções na maioria das vezes?"
+    // 🟢 Perguntas de Bem-estar (15 perguntas)
+    "Eu consigo me concentrar bem durante as aulas.",
+    "Eu costumo dormir bem e acordo disposto(a).",
+    "Me sinto confortável conversando com amigos e familiares.",
+    "Eu me sinto seguro(a) na escola.",
+    "Me sinto motivado(a) a estudar ou fazer atividades que gosto.",
+    "Eu tenho facilidade em lidar com pequenas frustrações.",
+    "Sinto que tenho pessoas que se importam comigo.",
+    "Me sinto confiante com quem sou.",
+    "Eu costumo manter minha rotina organizada.",
+    "Sinto que minha saúde física está boa.",
+    "Eu consigo controlar minha raiva ou irritação com facilidade.",
+    "Me sinto feliz com frequência.",
+    "Consigo pedir ajuda quando preciso.",
+    "Me sinto incluído(a) nas atividades da escola.",
+    "Me divirto e aproveito meu tempo livre.",
+    
+    // 🟡 Perguntas de Atenção (12 perguntas)
+    "Me sinto muito cansado(a), mesmo sem fazer esforço físico.",
+    "Tenho dificuldade para dormir ou insônia frequente.",
+    "Me sinto sobrecarregado(a) com as cobranças do dia a dia.",
+    "Tenho dificuldade em me concentrar nas aulas ou tarefas.",
+    "Às vezes evito contato com pessoas próximas.",
+    "Sinto que não estou rendendo como antes.",
+    "Me sinto inseguro(a) sobre o meu futuro.",
+    "Tenho tido muitas mudanças de humor.",
+    "Sinto falta de vontade de fazer coisas que antes gostava.",
+    "Costumo me sentir sozinho(a), mesmo quando há pessoas por perto.",
+    "Já pensei em faltar à escola para evitar algum desconforto.",
+    "Me sinto pressionado(a) para agradar os outros o tempo todo.",
+    
+    // 🔴 Perguntas Críticas (8 perguntas)
+    "Sinto que minha vida não faz sentido.",
+    "Já pensei em machucar a mim mesmo(a).",
+    "Sinto uma tristeza profunda que não passa.",
+    "Já chorei escondido(a) por não saber o que fazer com o que estou sentindo.",
+    "Sinto que ninguém me entende ou me escuta de verdade.",
+    "Já pensei em desistir de tudo.",
+    "Tenho vontade de desaparecer ou sumir por um tempo.",
+    "Sinto que estou no limite, como se fosse explodir."
   ];
 
   const handleAnswerChange = (value: number) => {
@@ -77,14 +107,19 @@ const Quiz = () => {
     const totalScore = answers.reduce((sum, answer) => sum + answer, 0);
     setPontuacao(totalScore);
 
-    // Determinar resultado
+    // Contar respostas críticas (perguntas 28-35 com resposta 3 ou 4)
+    const perguntasCriticas = answers.slice(27, 35); // índices 27-34 (perguntas 28-35)
+    const respostasCriticasAltas = perguntasCriticas.filter(resposta => resposta >= 3).length;
+
+    // Determinar resultado conforme nova lógica
     let resultadoFinal: 'verde' | 'amarelo' | 'vermelho';
-    if (totalScore <= 20) {
-      resultadoFinal = 'verde';
-    } else if (totalScore <= 30) {
+    
+    if (respostasCriticasAltas >= 3 || totalScore >= 81) {
+      resultadoFinal = 'vermelho';
+    } else if (respostasCriticasAltas >= 1 || (totalScore >= 46 && totalScore <= 80)) {
       resultadoFinal = 'amarelo';
     } else {
-      resultadoFinal = 'vermelho';
+      resultadoFinal = 'verde';
     }
     
     setResultado(resultadoFinal);

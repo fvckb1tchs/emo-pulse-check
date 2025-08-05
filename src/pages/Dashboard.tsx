@@ -16,7 +16,8 @@ import {
   LogOut,
   CheckCircle,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  CalendarPlus
 } from "lucide-react";
 import {
   Select,
@@ -51,6 +52,7 @@ const Dashboard = () => {
   const [filtroResultado, setFiltroResultado] = useState<string>("todos");
   const [loading, setLoading] = useState(false);
   const [escola, setEscola] = useState<string>("");
+  const [agendandoSessao, setAgendandoSessao] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -130,6 +132,38 @@ const Dashboard = () => {
     setRespostas([]);
     setEmail("");
     setSenha("");
+  };
+
+  const handleAgendarSessao = async (resposta: RespostaQuiz) => {
+    setAgendandoSessao(resposta.id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('agendar-sessao', {
+        body: {
+          alunoNome: resposta.aluno_nome,
+          escolaNome: escola || 'Escola não identificada',
+          resultado: resposta.resultado,
+          pontuacao: resposta.pontuacao,
+          dataEnvio: resposta.data_envio
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sessão agendada! 📅",
+        description: `Solicitação enviada para EmoTeen. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
+      });
+    } catch (error) {
+      console.error('Erro ao agendar sessão:', error);
+      toast({
+        title: "Erro ao agendar",
+        description: "Não foi possível agendar a sessão. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setAgendandoSessao(null);
+    }
   };
 
   useEffect(() => {
@@ -341,13 +375,14 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       {getResultadoBadge(resposta.resultado)}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Ver Detalhes
-                          </Button>
-                        </DialogTrigger>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Eye className="w-4 h-4 mr-1" />
+                              Ver Detalhes
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
@@ -384,7 +419,18 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </DialogContent>
-                      </Dialog>
+                        </Dialog>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleAgendarSessao(resposta)}
+                          disabled={agendandoSessao === resposta.id}
+                          className="flex items-center gap-1"
+                        >
+                          <CalendarPlus className="w-4 h-4" />
+                          {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar Sessão'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
