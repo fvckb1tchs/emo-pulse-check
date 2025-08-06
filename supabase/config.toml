@@ -13,3 +13,6 @@ port = 54323
 
 [functions.agendar-sessao]
 verify_jwt = false
+
+[functions.monitor-security]
+verify_jwt = false

@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      consentimento_responsavel: {
+        Row: {
+          aluno_nome: string
+          ativo: boolean
+          data_consentimento: string
+          escola_id: string
+          hash_assinatura: string
+          id: string
+          ip_address: string
+          responsavel_cpf: string
+          responsavel_nome: string
+          user_agent: string
+        }
+        Insert: {
+          aluno_nome: string
+          ativo?: boolean
+          data_consentimento?: string
+          escola_id: string
+          hash_assinatura: string
+          id?: string
+          ip_address: string
+          responsavel_cpf: string
+          responsavel_nome: string
+          user_agent: string
+        }
+        Update: {
+          aluno_nome?: string
+          ativo?: boolean
+          data_consentimento?: string
+          escola_id?: string
+          hash_assinatura?: string
+          id?: string
+          ip_address?: string
+          responsavel_cpf?: string
+          responsavel_nome?: string
+          user_agent?: string
+        }
+        Relationships: []
+      }
       escolas: {
         Row: {
           codigo_acesso: string
@@ -38,6 +77,39 @@ export type Database = {
           id?: string
           nome?: string
           senha_admin?: string
+        }
+        Relationships: []
+      }
+      logs: {
+        Row: {
+          acao: string
+          detalhes: Json | null
+          escola_id: string | null
+          id: string
+          ip_address: string | null
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          detalhes?: Json | null
+          escola_id?: string | null
+          id?: string
+          ip_address?: string | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          detalhes?: Json | null
+          escola_id?: string | null
+          id?: string
+          ip_address?: string | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -124,12 +196,56 @@ export type Database = {
           },
         ]
       }
+      sessoes_monitoramento: {
+        Row: {
+          aluno_nome: string | null
+          escola_id: string | null
+          id: string
+          ip_address: string
+          tentativa_sucesso: boolean
+          timestamp: string
+          user_agent: string
+        }
+        Insert: {
+          aluno_nome?: string | null
+          escola_id?: string | null
+          id?: string
+          ip_address: string
+          tentativa_sucesso: boolean
+          timestamp?: string
+          user_agent: string
+        }
+        Update: {
+          aluno_nome?: string | null
+          escola_id?: string | null
+          id?: string
+          ip_address?: string
+          tentativa_sucesso?: boolean
+          timestamp?: string
+          user_agent?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      hash_sensitive_data: {
+        Args: { data: string }
+        Returns: string
+      }
+      log_action: {
+        Args: {
+          p_user_id?: string
+          p_escola_id?: string
+          p_acao?: string
+          p_detalhes?: Json
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

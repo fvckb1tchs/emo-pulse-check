@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
+import { useSecurityLogger } from "@/hooks/useSecurityLogger";
 import { Loader2, School, User, GraduationCap } from "lucide-react";
 import {
   Select,
@@ -29,6 +30,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { logAction, logSessionAttempt } = useSecurityLogger();
 
   // Carregar séries quando código da escola for alterado
   useEffect(() => {

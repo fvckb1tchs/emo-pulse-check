@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
+import { useSecurityLogger } from "@/hooks/useSecurityLogger";
 import QuizCard from "@/components/ui/quiz-card";
 import ResultCard from "@/components/ui/result-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -17,6 +18,7 @@ const Quiz = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { logAction } = useSecurityLogger();
 
   // Verificar se usuário está autenticado
   useEffect(() => {
