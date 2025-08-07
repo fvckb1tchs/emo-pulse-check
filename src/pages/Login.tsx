@@ -121,20 +121,41 @@ const Login = () => {
         return;
       }
 
-      // Armazenar dados na sessão
-      sessionStorage.setItem('escolaId', escola.id);
-      sessionStorage.setItem('escolaNome', escola.nome);
-      sessionStorage.setItem('alunoNome', nomeAluno);
-      sessionStorage.setItem('serieId', serieId);
+      // Armazenar dados na sessão no formato correto
+      const userData = {
+        nome: nomeAluno,
+        serie_id: serieId
+      };
+      
+      const schoolData = {
+        id: escola.id,
+        nome_escola: escola.nome
+      };
+      
+      sessionStorage.setItem('userData', JSON.stringify(userData));
+      sessionStorage.setItem('schoolData', JSON.stringify(schoolData));
+
+      // Log da tentativa de login bem-sucedida
+      await logSessionAttempt(escola.id, nomeAluno, true);
+      await logAction({
+        acao: 'login_realizado',
+        escola_id: escola.id,
+        detalhes: { aluno_nome: nomeAluno, serie_id: serieId }
+      });
 
       toast({
         title: "Acesso autorizado! 🎉",
         description: `Bem-vindo(a), ${nomeAluno}!`,
       });
 
-      navigate('/quiz');
+      // Redirecionar para a página de consentimento
+      navigate('/consentimento');
     } catch (error) {
       console.error('Erro ao fazer login:', error);
+      
+      // Log da tentativa de login falhada
+      await logSessionAttempt(null, nomeAluno, false);
+      
       toast({
         title: "Erro de conexão",
         description: "Não foi possível conectar. Tente novamente em alguns instantes.",
