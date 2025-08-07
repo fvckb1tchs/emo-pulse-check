@@ -20,16 +20,50 @@ const Quiz = () => {
   const { toast } = useToast();
   const { logAction } = useSecurityLogger();
 
-  // Verificar se usuário está autenticado
+  // Verificar se usuário está autenticado e tem consentimento válido
   useEffect(() => {
-    const escolaId = sessionStorage.getItem('escolaId');
-    const alunoNome = sessionStorage.getItem('alunoNome');
-    const serieId = sessionStorage.getItem('serieId');
-    
-    if (!escolaId || !alunoNome || !serieId) {
-      navigate('/login');
-    }
-  }, [navigate]);
+    const checkAuthAndConsent = async () => {
+      const userDataString = sessionStorage.getItem('userData');
+      const schoolDataString = sessionStorage.getItem('schoolData');
+      
+      if (!userDataString || !schoolDataString) {
+        navigate('/login');
+        return;
+      }
+
+      const userData = JSON.parse(userDataString);
+      const schoolData = JSON.parse(schoolDataString);
+
+      // Verificar se existe consentimento válido
+      try {
+        const { data, error } = await supabase
+          .from('consentimento_responsavel')
+          .select('*')
+          .eq('aluno_nome', userData.nome)
+          .eq('escola_id', schoolData.id)
+          .eq('ativo', true)
+          .single();
+
+        if (error || !data) {
+          // Não há consentimento válido, redirecionar para página de consentimento
+          navigate('/consentimento');
+          return;
+        }
+
+        // Log da ação
+        await logAction({
+          acao: 'quiz_acessado',
+          escola_id: schoolData.id,
+          detalhes: { aluno_nome: userData.nome }
+        });
+      } catch (error) {
+        console.error('Erro ao verificar consentimento:', error);
+        navigate('/consentimento');
+      }
+    };
+
+    checkAuthAndConsent();
+  }, [navigate, logAction]);
 
   const questions = [
     // 🟢 Perguntas de Bem-estar (15 perguntas)
@@ -129,16 +163,22 @@ const Quiz = () => {
 
     // Salvar no banco de dados
     try {
-      const escolaId = sessionStorage.getItem('escolaId');
-      const alunoNome = sessionStorage.getItem('alunoNome');
-      const serieId = sessionStorage.getItem('serieId');
+      const userDataString = sessionStorage.getItem('userData');
+      const schoolDataString = sessionStorage.getItem('schoolData');
+      
+      if (!userDataString || !schoolDataString) {
+        throw new Error('Dados de sessão não encontrados');
+      }
+
+      const userData = JSON.parse(userDataString);
+      const schoolData = JSON.parse(schoolDataString);
 
       const { error } = await supabase
         .from('respostas_quiz')
         .insert({
-          aluno_nome: alunoNome,
-          escola_id: escolaId,
-          serie_id: serieId,
+          aluno_nome: userData.nome,
+          escola_id: schoolData.id,
+          serie_id: userData.serie_id || null,
           respostas: answers,
           resultado: resultadoFinal,
           pontuacao: totalScore,
@@ -146,6 +186,17 @@ const Quiz = () => {
         });
 
       if (error) throw error;
+
+      // Log da ação
+      await logAction({
+        acao: 'quiz_finalizado',
+        escola_id: schoolData.id,
+        detalhes: {
+          aluno_nome: userData.nome,
+          resultado: resultadoFinal,
+          pontuacao: totalScore
+        }
+      });
 
       setShowResult(true);
       
@@ -167,16 +218,30 @@ const Quiz = () => {
 
   const handleEncaminhar = async () => {
     try {
-      const escolaId = sessionStorage.getItem('escolaId');
-      const alunoNome = sessionStorage.getItem('alunoNome');
+      const userDataString = sessionStorage.getItem('userData');
+      const schoolDataString = sessionStorage.getItem('schoolData');
+      
+      if (!userDataString || !schoolDataString) {
+        throw new Error('Dados de sessão não encontrados');
+      }
+
+      const userData = JSON.parse(userDataString);
+      const schoolData = JSON.parse(schoolDataString);
 
       const { error } = await supabase
         .from('respostas_quiz')
         .update({ encaminhado: true })
-        .eq('aluno_nome', alunoNome)
-        .eq('escola_id', escolaId);
+        .eq('aluno_nome', userData.nome)
+        .eq('escola_id', schoolData.id);
 
       if (error) throw error;
+
+      // Log da ação
+      await logAction({
+        acao: 'encaminhamento_solicitado',
+        escola_id: schoolData.id,
+        detalhes: { aluno_nome: userData.nome }
+      });
 
       toast({
         title: "Solicitação enviada! 💙",
