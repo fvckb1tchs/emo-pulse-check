@@ -278,8 +278,19 @@ const Dashboard = () => {
     if (isAuth && escolaId) {
       setIsAuthenticated(true);
       setEscolaId(escolaId);
+      // Carregar dados da escola específica
       loadRespostas(escolaId);
       loadSeries(escolaId);
+      
+      // Buscar dados da escola para o nome
+      supabase
+        .from('escolas')
+        .select('nome')
+        .eq('id', escolaId)
+        .single()
+        .then(({ data }) => {
+          if (data) setEscola(data.nome);
+        });
     }
   }, []);
 
@@ -419,10 +430,10 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="respostas">Respostas dos Alunos</TabsTrigger>
-            <TabsTrigger value="series">Gerenciar Séries</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+            <TabsTrigger value="dashboard" className="text-xs sm:text-sm py-2">Dashboard</TabsTrigger>
+            <TabsTrigger value="respostas" className="text-xs sm:text-sm py-2">Respostas dos Alunos</TabsTrigger>
+            <TabsTrigger value="series" className="text-xs sm:text-sm py-2">Gerenciar Séries</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -490,21 +501,21 @@ const Dashboard = () => {
             </div>
 
             {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Gráfico de Pizza */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PieChart className="w-5 h-5" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <PieChart className="w-4 h-4" />
                     Distribuição Geral dos Resultados
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats.total > 0 ? (
-                    <ChartContainer config={chartConfig} className="h-[250px] md:h-[300px]">
+                    <ChartContainer config={chartConfig} className="h-[180px]">
                       <RechartsPieChart>
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <RechartsPieChart data={pieChartData} cx="50%" cy="50%" outerRadius={80} dataKey="value">
+                        <RechartsPieChart data={pieChartData} cx="50%" cy="50%" outerRadius={60} dataKey="value">
                           {pieChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
                           ))}
@@ -513,8 +524,8 @@ const Dashboard = () => {
                       </RechartsPieChart>
                     </ChartContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-[250px] md:h-[300px] text-muted-foreground">
-                      <p>Nenhum dado disponível</p>
+                    <div className="flex items-center justify-center h-[180px] text-muted-foreground">
+                      <p className="text-sm">Nenhum dado disponível</p>
                     </div>
                   )}
                 </CardContent>
@@ -522,24 +533,24 @@ const Dashboard = () => {
 
               {/* Gráfico de Barras por Série */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <BarChart3 className="w-4 h-4" />
                     Resultados por Série
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {barChartData.length > 0 ? (
-                    <ChartContainer config={chartConfig} className="h-[250px] md:h-[300px]">
-                      <BarChart data={barChartData}>
+                    <ChartContainer config={chartConfig} className="h-[180px]">
+                      <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
                         <XAxis 
                           dataKey="serie" 
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: 10 }}
                           angle={-45}
                           textAnchor="end"
-                          height={60}
+                          height={50}
                         />
-                        <YAxis tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 10 }} />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <ChartLegend content={<ChartLegendContent />} />
                         <Bar dataKey="verde" fill={chartColors.verde} name="Verde" />
@@ -548,8 +559,8 @@ const Dashboard = () => {
                       </BarChart>
                     </ChartContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-[250px] md:h-[300px] text-muted-foreground">
-                      <p>Nenhum dado disponível</p>
+                    <div className="flex items-center justify-center h-[180px] text-muted-foreground">
+                      <p className="text-sm">Nenhum dado disponível</p>
                     </div>
                   )}
                 </CardContent>
