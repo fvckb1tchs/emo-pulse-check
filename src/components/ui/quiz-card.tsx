@@ -20,10 +20,10 @@ const QuizCard = ({
   className 
 }: QuizCardProps) => {
   const options = [
-    { value: 1, label: "Nunca", emoji: "😊" },
-    { value: 2, label: "Raramente", emoji: "🙂" },
-    { value: 3, label: "Às vezes", emoji: "😐" },
-    { value: 4, label: "Frequentemente", emoji: "😟" }
+    { value: 1, label: "Nunca" },
+    { value: 2, label: "Raramente" },
+    { value: 3, label: "Às vezes" },
+    { value: 4, label: "Frequentemente" }
   ];
 
   return (
@@ -55,7 +55,6 @@ const QuizCard = ({
             )}
             onClick={() => onValueChange(option.value)}
           >
-            <span className="text-lg mr-3">{option.emoji}</span>
             <div className="flex flex-col items-start">
               <span className="font-medium">{option.label}</span>
             </div>
