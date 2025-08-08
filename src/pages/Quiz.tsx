@@ -66,7 +66,7 @@ const Quiz = () => {
   }, [navigate, logAction]);
 
   const questions = [
-    // 🟢 Perguntas de Bem-estar (15 perguntas)
+    // Perguntas de Bem-estar (15 perguntas)
     "Eu consigo me concentrar bem durante as aulas.",
     "Eu costumo dormir bem e acordo disposto(a).",
     "Me sinto confortável conversando com amigos e familiares.",
@@ -83,7 +83,7 @@ const Quiz = () => {
     "Me sinto incluído(a) nas atividades da escola.",
     "Me divirto e aproveito meu tempo livre.",
     
-    // 🟡 Perguntas de Atenção (12 perguntas)
+    // Perguntas de Atenção (12 perguntas)
     "Me sinto muito cansado(a), mesmo sem fazer esforço físico.",
     "Tenho dificuldade para dormir ou insônia frequente.",
     "Me sinto sobrecarregado(a) com as cobranças do dia a dia.",
@@ -97,7 +97,7 @@ const Quiz = () => {
     "Já pensei em faltar à escola para evitar algum desconforto.",
     "Me sinto pressionado(a) para agradar os outros o tempo todo.",
     
-    // 🔴 Perguntas Críticas (8 perguntas)
+    // Perguntas Críticas (8 perguntas)
     "Sinto que minha vida não faz sentido.",
     "Já pensei em machucar a mim mesmo(a).",
     "Sinto uma tristeza profunda que não passa.",
@@ -201,7 +201,7 @@ const Quiz = () => {
       setShowResult(true);
       
       toast({
-        title: "Avaliação concluída! ✅",
+        title: "Avaliação concluída!",
         description: "Suas respostas foram registradas com sucesso.",
       });
     } catch (error) {
@@ -244,7 +244,7 @@ const Quiz = () => {
       });
 
       toast({
-        title: "Solicitação enviada! 💙",
+        title: "Solicitação enviada!",
         description: "A escola foi notificada e entrará em contato em breve.",
       });
     } catch (error) {
