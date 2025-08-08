@@ -20,8 +20,18 @@ import {
   CalendarPlus,
   Plus,
   Trash2,
-  Settings
+  Settings,
+  BarChart3,
+  PieChart
 } from "lucide-react";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
+import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
   Select,
   SelectContent,
@@ -306,6 +316,44 @@ const Dashboard = () => {
     return serie ? serie.nome : 'Série não encontrada';
   };
 
+  // Dados para os gráficos
+  const chartColors = {
+    verde: "hsl(var(--emoteen-green))",
+    amarelo: "hsl(var(--emoteen-yellow))",
+    vermelho: "hsl(var(--emoteen-red))",
+  };
+
+  const pieChartData = [
+    { name: "Verde", value: stats.verde, fill: chartColors.verde },
+    { name: "Amarelo", value: stats.amarelo, fill: chartColors.amarelo },
+    { name: "Vermelho", value: stats.vermelho, fill: chartColors.vermelho },
+  ].filter(item => item.value > 0);
+
+  const barChartData = series.map(serie => {
+    const respostasSerie = respostas.filter(r => r.serie_id === serie.id);
+    return {
+      serie: serie.nome,
+      verde: respostasSerie.filter(r => r.resultado === 'verde').length,
+      amarelo: respostasSerie.filter(r => r.resultado === 'amarelo').length,
+      vermelho: respostasSerie.filter(r => r.resultado === 'vermelho').length,
+    };
+  }).filter(item => item.verde + item.amarelo + item.vermelho > 0);
+
+  const chartConfig = {
+    verde: {
+      label: "Verde",
+      color: chartColors.verde,
+    },
+    amarelo: {
+      label: "Amarelo", 
+      color: chartColors.amarelo,
+    },
+    vermelho: {
+      label: "Vermelho",
+      color: chartColors.vermelho,
+    },
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 flex items-center justify-center p-4">
@@ -355,102 +403,173 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
             <EmoTeenLogo size="md" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Dashboard EmoTeen</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Dashboard EmoTeen</h1>
               <p className="text-muted-foreground">{escola}</p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} className="w-full md:w-auto">
             <LogOut className="w-4 h-4 mr-2" />
             Sair
           </Button>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="respostas" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="respostas">Respostas dos Alunos</TabsTrigger>
             <TabsTrigger value="series">Gerenciar Séries</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="respostas" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
+                    <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="text-2xl font-bold">{stats.total}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                      <p className="text-lg md:text-2xl font-bold">{stats.total}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-emoteen-green" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-green" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Verde</p>
-                      <p className="text-2xl font-bold text-emoteen-green">{stats.verde}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Verde</p>
+                      <p className="text-lg md:text-2xl font-bold text-emoteen-green">{stats.verde}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-emoteen-yellow" />
+                    <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-yellow" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Amarelo</p>
-                      <p className="text-2xl font-bold text-emoteen-yellow">{stats.amarelo}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Amarelo</p>
+                      <p className="text-lg md:text-2xl font-bold text-emoteen-yellow">{stats.amarelo}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-emoteen-red" />
+                    <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-red" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Vermelho</p>
-                      <p className="text-2xl font-bold text-emoteen-red">{stats.vermelho}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Vermelho</p>
+                      <p className="text-lg md:text-2xl font-bold text-emoteen-red">{stats.vermelho}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Encaminhados</p>
-                      <p className="text-2xl font-bold">{stats.encaminhados}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Encaminhados</p>
+                      <p className="text-lg md:text-2xl font-bold">{stats.encaminhados}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Gráfico de Pizza */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="w-5 h-5" />
+                    Distribuição Geral dos Resultados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {stats.total > 0 ? (
+                    <ChartContainer config={chartConfig} className="h-[250px] md:h-[300px]">
+                      <RechartsPieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <RechartsPieChart data={pieChartData} cx="50%" cy="50%" outerRadius={80} dataKey="value">
+                          {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </RechartsPieChart>
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RechartsPieChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[250px] md:h-[300px] text-muted-foreground">
+                      <p>Nenhum dado disponível</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Gráfico de Barras por Série */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Resultados por Série
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {barChartData.length > 0 ? (
+                    <ChartContainer config={chartConfig} className="h-[250px] md:h-[300px]">
+                      <BarChart data={barChartData}>
+                        <XAxis 
+                          dataKey="serie" 
+                          tick={{ fontSize: 12 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                        <Bar dataKey="verde" fill={chartColors.verde} name="Verde" />
+                        <Bar dataKey="amarelo" fill={chartColors.amarelo} name="Amarelo" />
+                        <Bar dataKey="vermelho" fill={chartColors.vermelho} name="Vermelho" />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[250px] md:h-[300px] text-muted-foreground">
+                      <p>Nenhum dado disponível</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="respostas" className="space-y-6">
+
             {/* Filters */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <Filter className="w-5 h-5" />
                     Respostas dos Alunos
                   </CardTitle>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <Select value={filtroSerie} onValueChange={setFiltroSerie}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Filtrar por série" />
                       </SelectTrigger>
                       <SelectContent>
@@ -463,7 +582,7 @@ const Dashboard = () => {
                       </SelectContent>
                     </Select>
                     <Select value={filtroResultado} onValueChange={setFiltroResultado}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Filtrar por resultado" />
                       </SelectTrigger>
                       <SelectContent>
@@ -484,34 +603,35 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     respostasFiltradas.map((resposta) => (
-                      <div key={resposta.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div>
+                      <div key={resposta.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors gap-4">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="flex-1">
                             <p className="font-medium">{resposta.aluno_nome}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                               <Calendar className="w-3 h-3" />
                               {new Date(resposta.data_envio).toLocaleDateString('pt-BR')}
-                              <span>•</span>
-                              <span>{getSerieNome(resposta.serie_id)}</span>
-                              <span>•</span>
-                              <span>{resposta.pontuacao} pontos</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="block sm:inline">{getSerieNome(resposta.serie_id)}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="block sm:inline">{resposta.pontuacao} pontos</span>
                               {resposta.encaminhado && (
                                 <>
-                                  <span>•</span>
-                                  <span className="text-primary">Encaminhado</span>
+                                  <span className="hidden sm:inline">•</span>
+                                  <span className="text-primary block sm:inline">Encaminhado</span>
                                 </>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
                           {getResultadoBadge(resposta.resultado)}
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                                   <Eye className="w-4 h-4 mr-1" />
-                                  Ver Detalhes
+                                  <span className="hidden sm:inline">Ver Detalhes</span>
+                                  <span className="sm:hidden">Detalhes</span>
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
@@ -560,10 +680,15 @@ const Dashboard = () => {
                               size="sm"
                               onClick={() => handleAgendarSessao(resposta)}
                               disabled={agendandoSessao === resposta.id}
-                              className="flex items-center gap-1"
+                              className="flex items-center gap-1 w-full sm:w-auto"
                             >
                               <CalendarPlus className="w-4 h-4" />
-                              {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar Sessão'}
+                              <span className="hidden sm:inline">
+                                {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar Sessão'}
+                              </span>
+                              <span className="sm:hidden">
+                                {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar'}
+                              </span>
                             </Button>
                           </div>
                         </div>
@@ -585,14 +710,15 @@ const Dashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Input
                     placeholder="Digite o nome da série (ex: 1º Ano, 2º Médio)"
                     value={novaSerie}
                     onChange={(e) => setNovaSerie(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAdicionarSerie()}
+                    className="flex-1"
                   />
-                  <Button onClick={handleAdicionarSerie} disabled={!novaSerie.trim()}>
+                  <Button onClick={handleAdicionarSerie} disabled={!novaSerie.trim()} className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar
                   </Button>
@@ -614,32 +740,33 @@ const Dashboard = () => {
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">Nenhuma série cadastrada.</p>
                     </div>
-                  ) : (
-                    series.map((serie) => (
-                      <div key={serie.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <p className="font-medium">{serie.nome}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Status: {serie.ativa ? 'Ativa' : 'Inativa'}
-                            </p>
-                          </div>
-                          {serie.ativa && (
-                            <Badge variant="outline" className="text-emoteen-green border-emoteen-green">
-                              Ativa
-                            </Badge>
-                          )}
-                        </div>
-                        <Button
-                          variant={serie.ativa ? "destructive" : "default"}
-                          size="sm"
-                          onClick={() => handleToggleSerie(serie.id, serie.ativa)}
-                        >
-                          {serie.ativa ? 'Desativar' : 'Ativar'}
-                        </Button>
-                      </div>
-                    ))
-                  )}
+                   ) : (
+                     series.map((serie) => (
+                       <div key={serie.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4">
+                         <div className="flex items-center gap-3 flex-1">
+                           <div className="flex-1">
+                             <p className="font-medium">{serie.nome}</p>
+                             <p className="text-sm text-muted-foreground">
+                               Status: {serie.ativa ? 'Ativa' : 'Inativa'}
+                             </p>
+                           </div>
+                           {serie.ativa && (
+                             <Badge variant="outline" className="text-emoteen-green border-emoteen-green">
+                               Ativa
+                             </Badge>
+                           )}
+                         </div>
+                         <Button
+                           variant={serie.ativa ? "destructive" : "default"}
+                           size="sm"
+                           onClick={() => handleToggleSerie(serie.id, serie.ativa)}
+                           className="w-full sm:w-auto"
+                         >
+                           {serie.ativa ? 'Desativar' : 'Ativar'}
+                         </Button>
+                       </div>
+                     ))
+                   )}
                 </div>
               </CardContent>
             </Card>
