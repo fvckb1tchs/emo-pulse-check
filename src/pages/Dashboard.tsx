@@ -82,10 +82,13 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-      const { data: escolaData, error: rpcError } = await (supabase as any)
-        .rpc('validate_escola_login', { p_email: email, p_senha: senha });
+      const { data: escolaData, error } = await supabase
+        .from('escolas')
+        .select('*')
+        .eq('email_admin', email)
+        .maybeSingle();
 
-      if (rpcError || !escolaData) {
+      if (error || !escolaData) {
         toast({
           title: "Credenciais inválidas",
           description: "Email ou senha incorretos.",
@@ -94,25 +97,32 @@ const Dashboard = () => {
         return;
       }
 
-      const escolaInfo = escolaData as { id: string; nome: string };
+      if (escolaData.senha_admin !== senha) {
+        toast({
+          title: "Senha incorreta",
+          description: "Verifique sua senha e tente novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
 
       setIsAuthenticated(true);
-      setEscola(escolaInfo.nome);
-      setEscolaId(escolaInfo.id);
+      setEscola(escolaData.nome);
+      setEscolaId(escolaData.id);
       sessionStorage.setItem('adminAuthenticated', 'true');
-      sessionStorage.setItem('escolaAdminId', escolaInfo.id);
+      sessionStorage.setItem('escolaAdminId', escolaData.id);
       toast({
         title: "Acesso autorizado!",
-        description: `Bem-vindo ao dashboard de ${escolaInfo.nome}`,
+        description: `Bem-vindo ao dashboard de ${escolaData.nome}`,
       });
 
       // Carregar dados
-      loadRespostas(escolaInfo.id);
-      loadSeries(escolaInfo.id);
+      loadRespostas(escolaData.id);
+      loadSeries(escolaData.id);
       const { count } = await supabase
         .from('consentimento_responsavel')
         .select('*', { count: 'exact', head: true })
-        .eq('escola_id', escolaInfo.id)
+        .eq('escola_id', escolaData.id)
         .eq('ativo', true);
       setTotalAlunos(count || 0);
     } catch (error) {
