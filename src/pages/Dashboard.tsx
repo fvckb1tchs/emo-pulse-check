@@ -82,7 +82,7 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-      const { data: escolaData, error: rpcError } = await supabase
+      const { data: escolaData, error: rpcError } = await (supabase as any)
         .rpc('validate_escola_login', { p_email: email, p_senha: senha });
 
       if (rpcError || !escolaData) {
@@ -94,23 +94,25 @@ const Dashboard = () => {
         return;
       }
 
+      const escolaInfo = escolaData as { id: string; nome: string };
+
       setIsAuthenticated(true);
-      setEscola(escolaData.nome);
-      setEscolaId(escolaData.id);
+      setEscola(escolaInfo.nome);
+      setEscolaId(escolaInfo.id);
       sessionStorage.setItem('adminAuthenticated', 'true');
-      sessionStorage.setItem('escolaAdminId', escolaData.id);
+      sessionStorage.setItem('escolaAdminId', escolaInfo.id);
       toast({
         title: "Acesso autorizado!",
-        description: `Bem-vindo ao dashboard de ${escolaData.nome}`,
+        description: `Bem-vindo ao dashboard de ${escolaInfo.nome}`,
       });
 
       // Carregar dados
-      loadRespostas(escolaData.id);
-      loadSeries(escolaData.id);
+      loadRespostas(escolaInfo.id);
+      loadSeries(escolaInfo.id);
       const { count } = await supabase
         .from('consentimento_responsavel')
         .select('*', { count: 'exact', head: true })
-        .eq('escola_id', escolaData.id)
+        .eq('escola_id', escolaInfo.id)
         .eq('ativo', true);
       setTotalAlunos(count || 0);
     } catch (error) {
