@@ -11,7 +11,6 @@ import {
   Eye, 
   Calendar, 
   Users, 
-  TrendingUp, 
   Filter,
   LogOut,
   CheckCircle,
@@ -20,18 +19,9 @@ import {
   CalendarPlus,
   Plus,
   Trash2,
-  Settings,
-  BarChart3,
-  PieChart
+  Settings
 } from "lucide-react";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from "@/components/ui/chart";
-import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+
 import {
   Select,
   SelectContent,
@@ -85,19 +75,17 @@ const Dashboard = () => {
   const [agendandoSessao, setAgendandoSessao] = useState<string | null>(null);
   const [novaSerie, setNovaSerie] = useState("");
   const { toast } = useToast();
+  const [totalAlunos, setTotalAlunos] = useState(0);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data: escolaData, error } = await supabase
-        .from('escolas')
-        .select('*')
-        .eq('email_admin', email)
-        .single();
+      const { data: escolaData, error: rpcError } = await supabase
+        .rpc('validate_escola_login', { p_email: email, p_senha: senha });
 
-      if (error || !escolaData) {
+      if (rpcError || !escolaData) {
         toast({
           title: "Credenciais inválidas",
           description: "Email ou senha incorretos.",
@@ -106,26 +94,25 @@ const Dashboard = () => {
         return;
       }
 
-      // Verificar senha (simplificado para demo - em produção usar bcrypt)
-      if (senha === 'password') {
-        setIsAuthenticated(true);
-        setEscola(escolaData.nome);
-        setEscolaId(escolaData.id);
-        sessionStorage.setItem('adminAuthenticated', 'true');
-        sessionStorage.setItem('escolaAdminId', escolaData.id);
-        toast({
-          title: "Acesso autorizado! 🎉",
-          description: `Bem-vindo ao dashboard de ${escolaData.nome}`,
-        });
-        loadRespostas(escolaData.id);
-        loadSeries(escolaData.id);
-      } else {
-        toast({
-          title: "Senha incorreta",
-          description: "Verifique sua senha e tente novamente.",
-          variant: "destructive"
-        });
-      }
+      setIsAuthenticated(true);
+      setEscola(escolaData.nome);
+      setEscolaId(escolaData.id);
+      sessionStorage.setItem('adminAuthenticated', 'true');
+      sessionStorage.setItem('escolaAdminId', escolaData.id);
+      toast({
+        title: "Acesso autorizado!",
+        description: `Bem-vindo ao dashboard de ${escolaData.nome}`,
+      });
+
+      // Carregar dados
+      loadRespostas(escolaData.id);
+      loadSeries(escolaData.id);
+      const { count } = await supabase
+        .from('consentimento_responsavel')
+        .select('*', { count: 'exact', head: true })
+        .eq('escola_id', escolaData.id)
+        .eq('ativo', true);
+      setTotalAlunos(count || 0);
     } catch (error) {
       console.error('Erro no login:', error);
       toast({
@@ -281,7 +268,7 @@ const Dashboard = () => {
       // Carregar dados da escola específica
       loadRespostas(escolaId);
       loadSeries(escolaId);
-      
+
       // Buscar dados da escola para o nome
       supabase
         .from('escolas')
@@ -291,6 +278,14 @@ const Dashboard = () => {
         .then(({ data }) => {
           if (data) setEscola(data.nome);
         });
+
+      // Contar alunos com consentimento ativo
+      supabase
+        .from('consentimento_responsavel')
+        .select('*', { count: 'exact', head: true })
+        .eq('escola_id', escolaId)
+        .eq('ativo', true)
+        .then(({ count }) => setTotalAlunos(count || 0));
     }
   }, []);
 
@@ -327,43 +322,6 @@ const Dashboard = () => {
     return serie ? serie.nome : 'Série não encontrada';
   };
 
-  // Dados para os gráficos
-  const chartColors = {
-    verde: "hsl(var(--emoteen-green))",
-    amarelo: "hsl(var(--emoteen-yellow))",
-    vermelho: "hsl(var(--emoteen-red))",
-  };
-
-  const pieChartData = [
-    { name: "Verde", value: stats.verde, fill: chartColors.verde },
-    { name: "Amarelo", value: stats.amarelo, fill: chartColors.amarelo },
-    { name: "Vermelho", value: stats.vermelho, fill: chartColors.vermelho },
-  ].filter(item => item.value > 0);
-
-  const barChartData = series.map(serie => {
-    const respostasSerie = respostas.filter(r => r.serie_id === serie.id);
-    return {
-      serie: serie.nome,
-      verde: respostasSerie.filter(r => r.resultado === 'verde').length,
-      amarelo: respostasSerie.filter(r => r.resultado === 'amarelo').length,
-      vermelho: respostasSerie.filter(r => r.resultado === 'vermelho').length,
-    };
-  }).filter(item => item.verde + item.amarelo + item.vermelho > 0);
-
-  const chartConfig = {
-    verde: {
-      label: "Verde",
-      color: chartColors.verde,
-    },
-    amarelo: {
-      label: "Amarelo", 
-      color: chartColors.amarelo,
-    },
-    vermelho: {
-      label: "Vermelho",
-      color: chartColors.vermelho,
-    },
-  };
 
   if (!isAuthenticated) {
     return (
@@ -401,9 +359,6 @@ const Dashboard = () => {
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
-            <div className="mt-4 text-xs text-muted-foreground text-center">
-              <p>Para teste, use: <strong>admin@escolaexemplo.com</strong> / <strong>password</strong></p>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -430,142 +385,28 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+          <TabsList className="flex w-full gap-2 flex-wrap">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm py-2">Dashboard</TabsTrigger>
             <TabsTrigger value="respostas" className="text-xs sm:text-sm py-2">Respostas dos Alunos</TabsTrigger>
             <TabsTrigger value="series" className="text-xs sm:text-sm py-2">Gerenciar Séries</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {/* Cards */}
+            <div className="grid grid-cols-1 gap-4">
               <Card>
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Total</p>
-                      <p className="text-lg md:text-2xl font-bold">{stats.total}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-green" />
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Verde</p>
-                      <p className="text-lg md:text-2xl font-bold text-emoteen-green">{stats.verde}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-yellow" />
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Amarelo</p>
-                      <p className="text-lg md:text-2xl font-bold text-emoteen-yellow">{stats.amarelo}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-red" />
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Vermelho</p>
-                      <p className="text-lg md:text-2xl font-bold text-emoteen-red">{stats.vermelho}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Encaminhados</p>
-                      <p className="text-lg md:text-2xl font-bold">{stats.encaminhados}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Alunos</p>
+                      <p className="text-lg md:text-2xl font-bold">{totalAlunos}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Gráfico de Pizza */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <PieChart className="w-4 h-4" />
-                    Distribuição Geral dos Resultados
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {stats.total > 0 ? (
-                    <ChartContainer config={chartConfig} className="h-[180px]">
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <RechartsPieChart data={pieChartData} cx="50%" cy="50%" outerRadius={60} dataKey="value">
-                          {pieChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                          ))}
-                        </RechartsPieChart>
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </RechartsPieChart>
-                    </ChartContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-[180px] text-muted-foreground">
-                      <p className="text-sm">Nenhum dado disponível</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Gráfico de Barras por Série */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <BarChart3 className="w-4 h-4" />
-                    Resultados por Série
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {barChartData.length > 0 ? (
-                    <ChartContainer config={chartConfig} className="h-[180px]">
-                      <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
-                        <XAxis 
-                          dataKey="serie" 
-                          tick={{ fontSize: 10 }}
-                          angle={-45}
-                          textAnchor="end"
-                          height={50}
-                        />
-                        <YAxis tick={{ fontSize: 10 }} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <ChartLegend content={<ChartLegendContent />} />
-                        <Bar dataKey="verde" fill={chartColors.verde} name="Verde" />
-                        <Bar dataKey="amarelo" fill={chartColors.amarelo} name="Amarelo" />
-                        <Bar dataKey="vermelho" fill={chartColors.vermelho} name="Vermelho" />
-                      </BarChart>
-                    </ChartContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-[180px] text-muted-foreground">
-                      <p className="text-sm">Nenhum dado disponível</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
 
           <TabsContent value="respostas" className="space-y-6">
