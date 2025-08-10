@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_MODE } from "@/config";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
 
 const ConsentimentoResponsavel = () => {
@@ -43,6 +44,11 @@ const ConsentimentoResponsavel = () => {
 
   const checkExistingConsent = async (alunoNome: string, escolaId: string) => {
     try {
+      if (DEMO_MODE) {
+        const hasConsent = localStorage.getItem(`consent_${escolaId}_${alunoNome}`);
+        if (hasConsent) navigate('/quiz');
+        return;
+      }
       const { data, error } = await supabase
         .from('consentimento_responsavel')
         .select('*')
@@ -102,7 +108,10 @@ const ConsentimentoResponsavel = () => {
   const logAction = async (action: string, details: any = {}) => {
     const { userAgent, ipPromise } = getUserInfo();
     const ip = await ipPromise;
-    
+    if (DEMO_MODE) {
+      console.log('[DemoMode] logAction', { action, details, ip, userAgent });
+      return;
+    }
     await supabase.rpc('log_action', {
       p_escola_id: userInfo?.id,
       p_acao: action,
@@ -147,6 +156,33 @@ const ConsentimentoResponsavel = () => {
         ip,
         userAgent
       });
+
+      if (DEMO_MODE) {
+        localStorage.setItem(
+          `consent_${userInfo.id}_${userInfo.nome}`,
+          JSON.stringify({
+            aluno_nome: userInfo.nome,
+            escola_id: userInfo.id,
+            responsavel_nome: responsavelNome,
+            responsavel_cpf: responsavelCpf,
+            ip_address: ip,
+            user_agent: userAgent,
+            hash_assinatura: hashData,
+            data_consentimento: new Date().toISOString(),
+            ativo: true
+          })
+        );
+        await logAction('consentimento_registrado', {
+          aluno_nome: userInfo.nome,
+          responsavel_nome: responsavelNome
+        });
+        toast({
+          title: 'Consentimento registrado',
+          description: 'Consentimento registrado com sucesso. Redirecionando para o quiz...',
+        });
+        setTimeout(() => navigate('/quiz'), 1200);
+        return;
+      }
 
       const { error } = await supabase
         .from('consentimento_responsavel')

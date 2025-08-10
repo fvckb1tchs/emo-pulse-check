@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_MODE } from "@/config";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
 import { 
   Eye, 
@@ -82,6 +83,24 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
+      if (DEMO_MODE) {
+        // Descobrir automaticamente uma escola demo com base nas respostas salvas
+        const respostaKey = Object.keys(localStorage).find((k) => k.startsWith('respostas_'));
+        const demoEscolaId = respostaKey ? respostaKey.replace('respostas_', '') : 'demo-escola';
+        setIsAuthenticated(true);
+        setEscola('Escola Demo');
+        setEscolaId(demoEscolaId);
+        sessionStorage.setItem('adminAuthenticated', 'true');
+        sessionStorage.setItem('escolaAdminId', demoEscolaId);
+        toast({ title: 'Acesso autorizado!', description: 'Bem-vindo ao dashboard (Modo Demo)' });
+        await loadRespostas(demoEscolaId);
+        await loadSeries(demoEscolaId);
+        // Contar consentimentos locais
+        const total = Object.keys(localStorage).filter((k) => k.startsWith(`consent_${demoEscolaId}_`)).length;
+        setTotalAlunos(total);
+        return;
+      }
+
       const { data: escolaData, error } = await supabase
         .from('escolas')
         .select('*')

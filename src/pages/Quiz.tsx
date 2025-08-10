@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_MODE } from "@/config";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
 import { useSecurityLogger } from "@/hooks/useSecurityLogger";
 import QuizCard from "@/components/ui/quiz-card";
@@ -36,6 +37,19 @@ const Quiz = () => {
 
       // Verificar se existe consentimento válido
       try {
+        if (DEMO_MODE) {
+          const hasConsent = localStorage.getItem(`consent_${schoolData.id}_${userData.nome}`);
+          if (!hasConsent) {
+            navigate('/consentimento');
+            return;
+          }
+          await logAction({
+            acao: 'quiz_acessado',
+            escola_id: schoolData.id,
+            detalhes: { aluno_nome: userData.nome }
+          });
+          return;
+        }
         const { data, error } = await supabase
           .from('consentimento_responsavel')
           .select('*')
@@ -173,6 +187,39 @@ const Quiz = () => {
       const userData = JSON.parse(userDataString);
       const schoolData = JSON.parse(schoolDataString);
 
+      if (DEMO_MODE) {
+        const key = `respostas_${schoolData.id}`;
+        const lista: any[] = JSON.parse(localStorage.getItem(key) || '[]');
+        const novo = {
+          id: `demo-${Date.now()}`,
+          aluno_nome: userData.nome,
+          escola_id: schoolData.id,
+          serie_id: userData.serie_id || null,
+          respostas: answers,
+          resultado: resultadoFinal,
+          pontuacao: totalScore,
+          encaminhado: false,
+          data_envio: new Date().toISOString()
+        };
+        lista.unshift(novo);
+        localStorage.setItem(key, JSON.stringify(lista));
+        await logAction({
+          acao: 'quiz_finalizado',
+          escola_id: schoolData.id,
+          detalhes: {
+            aluno_nome: userData.nome,
+            resultado: resultadoFinal,
+            pontuacao: totalScore
+          }
+        });
+        setShowResult(true);
+        toast({
+          title: 'Avaliação concluída!',
+          description: 'Suas respostas foram registradas com sucesso.',
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('respostas_quiz')
         .insert({
@@ -227,6 +274,26 @@ const Quiz = () => {
 
       const userData = JSON.parse(userDataString);
       const schoolData = JSON.parse(schoolDataString);
+
+      if (DEMO_MODE) {
+        const key = `respostas_${schoolData.id}`;
+        const lista: any[] = JSON.parse(localStorage.getItem(key) || '[]');
+        const idx = lista.findIndex((r) => r.aluno_nome === userData.nome && r.escola_id === schoolData.id);
+        if (idx >= 0) {
+          lista[idx].encaminhado = true;
+          localStorage.setItem(key, JSON.stringify(lista));
+        }
+        await logAction({
+          acao: 'encaminhamento_solicitado',
+          escola_id: schoolData.id,
+          detalhes: { aluno_nome: userData.nome }
+        });
+        toast({
+          title: 'Solicitação enviada!',
+          description: 'A escola foi notificada e entrará em contato em breve.',
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('respostas_quiz')

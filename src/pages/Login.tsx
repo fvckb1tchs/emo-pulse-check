@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_MODE } from "@/config";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
 import { useSecurityLogger } from "@/hooks/useSecurityLogger";
 import { Loader2, School, User, GraduationCap } from "lucide-react";
@@ -44,6 +45,16 @@ const Login = () => {
 
   const loadSeries = async () => {
     try {
+      if (DEMO_MODE) {
+        const demoSeries: Serie[] = [
+          { id: '6ano', nome: '6º ano' },
+          { id: '7ano', nome: '7º ano' },
+          { id: '8ano', nome: '8º ano' },
+          { id: '9ano', nome: '9º ano' },
+        ];
+        setSeries(demoSeries);
+        return;
+      }
       // Primeiro buscar a escola pelo código
       const { data: escolaData, error: escolaError } = await supabase
         .from('escolas')
@@ -105,6 +116,37 @@ const Login = () => {
     setLoading(true);
 
     try {
+      if (DEMO_MODE) {
+        const escola = {
+          id: `demo-${codigoEscola.toUpperCase()}`,
+          nome: `Escola ${codigoEscola.toUpperCase()}`
+        };
+
+        const userData = {
+          nome: nomeAluno,
+          serie_id: serieId
+        };
+        const schoolData = {
+          id: escola.id,
+          nome_escola: escola.nome
+        };
+        sessionStorage.setItem('userData', JSON.stringify(userData));
+        sessionStorage.setItem('schoolData', JSON.stringify(schoolData));
+
+        await logSessionAttempt(escola.id, nomeAluno, true);
+        await logAction({
+          acao: 'login_realizado',
+          escola_id: escola.id,
+          detalhes: { aluno_nome: nomeAluno, serie_id: serieId }
+        });
+
+        toast({
+          title: 'Acesso autorizado! 🎉',
+          description: `Bem-vindo(a), ${nomeAluno}!`,
+        });
+        navigate('/consentimento');
+        return;
+      }
       // Verificar se o código da escola existe
       const { data: escola, error } = await supabase
         .from('escolas')

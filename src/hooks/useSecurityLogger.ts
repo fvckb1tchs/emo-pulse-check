@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { DEMO_MODE } from '@/config';
 
 interface LogData {
   acao: string;
@@ -27,6 +28,10 @@ export const useSecurityLogger = () => {
 
   const logAction = useCallback(async (logData: LogData) => {
     try {
+      if (DEMO_MODE) {
+        console.log('[DemoMode] logAction', logData);
+        return;
+      }
       const { userAgent, getIP } = getUserInfo();
       const ip = await getIP();
       
@@ -53,6 +58,10 @@ export const useSecurityLogger = () => {
     success: boolean
   ) => {
     try {
+      if (DEMO_MODE) {
+        console.log('[DemoMode] logSessionAttempt', { escolaId, alunoNome, success });
+        return;
+      }
       const { userAgent, getIP } = getUserInfo();
       const ip = await getIP();
       
