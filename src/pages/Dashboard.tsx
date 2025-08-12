@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DEMO_MODE } from "@/config";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
 import { 
   Eye, 
@@ -83,24 +82,6 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-      if (DEMO_MODE) {
-        // Descobrir automaticamente uma escola demo com base nas respostas salvas
-        const respostaKey = Object.keys(localStorage).find((k) => k.startsWith('respostas_'));
-        const demoEscolaId = respostaKey ? respostaKey.replace('respostas_', '') : 'demo-escola';
-        setIsAuthenticated(true);
-        setEscola('Escola Demo');
-        setEscolaId(demoEscolaId);
-        sessionStorage.setItem('adminAuthenticated', 'true');
-        sessionStorage.setItem('escolaAdminId', demoEscolaId);
-        toast({ title: 'Acesso autorizado!', description: 'Bem-vindo ao dashboard (Modo Demo)' });
-        await loadRespostas(demoEscolaId);
-        await loadSeries(demoEscolaId);
-        // Contar consentimentos locais
-        const total = Object.keys(localStorage).filter((k) => k.startsWith(`consent_${demoEscolaId}_`)).length;
-        setTotalAlunos(total);
-        return;
-      }
-
       const { data: escolaData, error } = await supabase
         .from('escolas')
         .select('*')
@@ -353,7 +334,6 @@ const Dashboard = () => {
     return serie ? serie.nome : 'Série não encontrada';
   };
 
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 flex items-center justify-center p-4">
@@ -437,11 +417,9 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-
           </TabsContent>
 
           <TabsContent value="respostas" className="space-y-6">
-
             {/* Filters */}
             <Card>
               <CardHeader>
@@ -541,7 +519,7 @@ const Dashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-muted-foreground">Status</p>
-                                      <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminhado'}</p>
+                                      <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminannels</p>
                                     </div>
                                   </div>
                                   <div>
@@ -625,7 +603,7 @@ const Dashboard = () => {
                     </div>
                    ) : (
                      series.map((serie) => (
-                       <div key={serie.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4">
+                       <div key={serie.id} className="flex flex-col sm:flex Кабелна телевизия-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4">
                          <div className="flex items-center gap-3 flex-1">
                            <div className="flex-1">
                              <p className="font-medium">{serie.nome}</p>
