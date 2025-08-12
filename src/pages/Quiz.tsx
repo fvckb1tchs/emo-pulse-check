@@ -66,7 +66,7 @@ const Quiz = () => {
   }, [navigate, logAction]);
 
   const questions = [
-    // Perguntas de Bem-estar (15 perguntas)
+    // Perguntas de Bem-estar (1-15, Verde)
     "Eu consigo me concentrar bem durante as aulas.",
     "Eu costumo dormir bem e acordo disposto(a).",
     "Me sinto confortável conversando com amigos e familiares.",
@@ -83,7 +83,7 @@ const Quiz = () => {
     "Me sinto incluído(a) nas atividades da escola.",
     "Me divirto e aproveito meu tempo livre.",
     
-    // Perguntas de Atenção (12 perguntas)
+    // Perguntas de Atenção (16-27, Amarelo)
     "Me sinto muito cansado(a), mesmo sem fazer esforço físico.",
     "Tenho dificuldade para dormir ou insônia frequente.",
     "Me sinto sobrecarregado(a) com as cobranças do dia a dia.",
@@ -97,7 +97,7 @@ const Quiz = () => {
     "Já pensei em faltar à escola para evitar algum desconforto.",
     "Me sinto pressionado(a) para agradar os outros o tempo todo.",
     
-    // Perguntas Críticas (8 perguntas)
+    // Perguntas Críticas (28-35, Vermelho)
     "Sinto que minha vida não faz sentido.",
     "Já pensei em machucar a mim mesmo(a).",
     "Sinto uma tristeza profunda que não passa.",
@@ -140,20 +140,25 @@ const Quiz = () => {
   const calculateResult = async () => {
     setLoading(true);
     
-    // Calcular pontuação
-    const totalScore = answers.reduce((sum, answer) => sum + answer, 0);
+    // Inverter pontuação das perguntas verdes (1-15, índices 0-14)
+    const invertedGreenScores = answers.slice(0, 15).map(score => 4 - score);
+    // Manter pontuação original para amarelo (16-27, índices 15-26) e vermelho (28-35, índices 27-34)
+    const yellowScores = answers.slice(15, 27);
+    const redScores = answers.slice(27, 35);
+    
+    // Calcular pontuação total
+    const totalScore = [...invertedGreenScores, ...yellowScores, ...redScores].reduce((sum, score) => sum + score, 0);
     setPontuacao(totalScore);
 
-    // Contar respostas críticas (perguntas 28-35 com resposta 3 ou 4)
-    const perguntasCriticas = answers.slice(27, 35); // índices 27-34 (perguntas 28-35)
-    const respostasCriticasAltas = perguntasCriticas.filter(resposta => resposta >= 3).length;
+    // Contar respostas críticas (perguntas 28-35, índices 27-34) com nota 3 ou 4
+    const respostasCriticasAltas = redScores.filter(resposta => resposta >= 3).length;
 
-    // Determinar resultado conforme nova lógica
+    // Determinar resultado conforme lógica corrigida
     let resultadoFinal: 'verde' | 'amarelo' | 'vermelho';
     
-    if (respostasCriticasAltas >= 3 || totalScore >= 81) {
+    if (respostasCriticasAltas >= 3 || totalScore > 80) {
       resultadoFinal = 'vermelho';
-    } else if (respostasCriticasAltas >= 1 || (totalScore >= 46 && totalScore <= 80)) {
+    } else if (totalScore >= 46 && totalScore <= 80) {
       resultadoFinal = 'amarelo';
     } else {
       resultadoFinal = 'verde';
@@ -179,7 +184,7 @@ const Quiz = () => {
           aluno_nome: userData.nome,
           escola_id: schoolData.id,
           serie_id: userData.serie_id || null,
-          respostas: answers,
+          respostas: answers, // Armazena respostas originais (não invertidas)
           resultado: resultadoFinal,
           pontuacao: totalScore,
           encaminhado: false
