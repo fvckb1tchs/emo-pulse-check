@@ -496,45 +496,45 @@ const Dashboard = () => {
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Data</p>
-                                      <p className="font-medium">{new Date(resposta.data_envio).toLocaleDateString('pt-BR')}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Série</p>
-                                      <p className="font-medium">{getSerieNome(resposta.serie_id)}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Resultado</p>
-                                      <div className="mt-1">{getResultadoBadge(resposta.resultado)}</div>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Pontuação</p>
-                                      <p className="font-medium">{resposta.pontuacao} pontos</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-muted-foreground">Status</p>
-                                      <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminannels</p>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-muted-foreground mb-2">Respostas individuais</p>
-                                    <div className="grid grid-cols-7 gap-2">
-                                      {resposta.respostas.map((resp, index) => (
-                                        <div key={index} className="text-center p-2 bg-muted rounded">
-                                          <p className="text-xs text-muted-foreground">Q{index + 1}</p>
-                                          <p className="font-bold">{resp}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              </DialogContent>
+  <DialogHeader>
+    <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
+  </DialogHeader>
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <p className="text-sm text-muted-foreground">Data</p>
+        <p className="font-medium">{new Date(resposta.data_envio).toLocaleDateString('pt-BR')}</p>
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Série</p>
+        <p className="font-medium">{getSerieNome(resposta.serie_id)}</p>
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Resultado</p>
+        <div className="mt-1">{getResultadoBadge(resposta.resultado)}</div>
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Pontuação</p>
+        <p className="font-medium">{resposta.pontuacao} pontos</p>
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Status</p>
+        <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminhado'}</p>
+      </div>
+    </div>
+    <div>
+      <p className="text-sm text-muted-foreground mb-2">Respostas individuais</p>
+      <div className="grid grid-cols-7 gap-2">
+        {resposta.respostas.map((resp, index) => (
+          <div key={index} className="text-center p-2 bg-muted rounded">
+            <p className="text-xs text-muted-foreground">Q{index + 1}</p>
+            <p className="font-bold">{resp}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</DialogContent>
                             </Dialog>
                             <Button
                               variant="default"
