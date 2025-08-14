@@ -402,22 +402,66 @@ const Dashboard = () => {
             <TabsTrigger value="series" className="text-xs sm:text-sm py-2">Gerenciar Séries</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Cards */}
-            <div className="grid grid-cols-1 gap-4">
-              <Card>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Alunos</p>
-                      <p className="text-lg md:text-2xl font-bold">{totalAlunos}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+    <TabsContent value="dashboard" className="space-y-6">
+  {/* Cards */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <Card>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+          <div>
+            <p className="text-xs md:text-sm text-muted-foreground">Alunos</p>
+            <p className="text-lg md:text-2xl font-bold">{totalAlunos}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-green" />
+          <div>
+            <p className="text-xs md:text-sm text-muted-foreground">Verde</p>
+            <p className="text-lg md:text-2xl font-bold">{stats.verde}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-yellow" />
+          <div>
+            <p className="text-xs md:text-sm text-muted-foreground">Amarelo</p>
+            <p className="text-lg md:text-2xl font-bold">{stats.amarelo}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-red" />
+          <div>
+            <p className="text-xs md:text-sm text-muted-foreground">Vermelho</p>
+            <p className="text-lg md:text-2xl font-bold">{stats.vermelho}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center gap-2">
+          <CalendarPlus className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+          <div>
+            <p className="text-xs md:text-sm text-muted-foreground">Encaminhados</p>
+            <p className="text-lg md:text-2xl font-bold">{stats.encaminhados}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</TabsContent>
 
           <TabsContent value="respostas" className="space-y-6">
             {/* Filters */}
