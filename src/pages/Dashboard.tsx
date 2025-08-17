@@ -271,6 +271,64 @@ const Dashboard = () => {
     }
   };
 
+  const exportToCSV = () => {
+    if (respostasFiltradas.length === 0) {
+      toast({
+        title: "Nenhum dado para exportar",
+        description: "Não há respostas para exportar com os filtros atuais.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Definir cabeçalhos do CSV
+    const headers = [
+      "Nome do Aluno",
+      "Data de Envio",
+      "Série",
+      "Resultado",
+      "Pontuação",
+      "Encaminhado",
+      "Respostas Individuais"
+    ];
+
+    // Converter respostas filtradas em linhas de CSV
+    const rows = respostasFiltradas.map((resposta) => [
+      `"${resposta.aluno_nome}"`,
+      `"${new Date(resposta.data_envio).toLocaleDateString('pt-BR')}"`,
+      `"${getSerieNome(resposta.serie_id)}"`,
+      resposta.resultado,
+      resposta.pontuacao,
+      resposta.encaminhado ? "Sim" : "Não",
+      `"${resposta.respostas.join(", ")}"`
+    ]);
+
+    // Combinar cabeçalhos e linhas
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(","))
+    ].join("\n");
+
+    // Criar um Blob com o conteúdo CSV
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    // Criar um link temporário para download
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `respostas_emoteen_${escola}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Mostrar notificação de sucesso
+    toast({
+      title: "Exportação concluída! 📥",
+      description: "O arquivo CSV foi baixado com sucesso.",
+    });
+  };
+
   useEffect(() => {
     const isAuth = sessionStorage.getItem('adminAuthenticated');
     const escolaId = sessionStorage.getItem('escolaAdminId');
@@ -402,66 +460,66 @@ const Dashboard = () => {
             <TabsTrigger value="series" className="text-xs sm:text-sm py-2">Gerenciar Séries</TabsTrigger>
           </TabsList>
 
-    <TabsContent value="dashboard" className="space-y-6">
-  {/* Cards */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-    <Card>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-          <div>
-            <p className="text-xs md:text-sm text-muted-foreground">Alunos</p>
-            <p className="text-lg md:text-2xl font-bold">{totalAlunos}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-green" />
-          <div>
-            <p className="text-xs md:text-sm text-muted-foreground">Verde</p>
-            <p className="text-lg md:text-2xl font-bold">{stats.verde}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-yellow" />
-          <div>
-            <p className="text-xs md:text-sm text-muted-foreground">Amarelo</p>
-            <p className="text-lg md:text-2xl font-bold">{stats.amarelo}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-red" />
-          <div>
-            <p className="text-xs md:text-sm text-muted-foreground">Vermelho</p>
-            <p className="text-lg md:text-2xl font-bold">{stats.vermelho}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center gap-2">
-          <CalendarPlus className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-          <div>
-            <p className="text-xs md:text-sm text-muted-foreground">Encaminhados</p>
-            <p className="text-lg md:text-2xl font-bold">{stats.encaminhados}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-</TabsContent>
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Alunos</p>
+                      <p className="text-lg md:text-2xl font-bold">{totalAlunos}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-green" />
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Verde</p>
+                      <p className="text-lg md:text-2xl font-bold">{stats.verde}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-yellow" />
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Amarelo</p>
+                      <p className="text-lg md:text-2xl font-bold">{stats.amarelo}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-emoteen-red" />
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Vermelho</p>
+                      <p className="text-lg md:text-2xl font-bold">{stats.vermelho}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2">
+                    <CalendarPlus className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Encaminhados</p>
+                      <p className="text-lg md:text-2xl font-bold">{stats.encaminhados}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="respostas" className="space-y-6">
             {/* Filters */}
@@ -497,6 +555,9 @@ const Dashboard = () => {
                         <SelectItem value="vermelho">Vermelho</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button onClick={exportToCSV} className="w-full sm:w-auto">
+                      Exportar para CSV
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -540,45 +601,45 @@ const Dashboard = () => {
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
-  <DialogHeader>
-    <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
-  </DialogHeader>
-  <div className="space-y-4">
-    <div className="grid grid-cols-2 gap-4">
-      <div>
-        <p className="text-sm text-muted-foreground">Data</p>
-        <p className="font-medium">{new Date(resposta.data_envio).toLocaleDateString('pt-BR')}</p>
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">Série</p>
-        <p className="font-medium">{getSerieNome(resposta.serie_id)}</p>
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">Resultado</p>
-        <div className="mt-1">{getResultadoBadge(resposta.resultado)}</div>
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">Pontuação</p>
-        <p className="font-medium">{resposta.pontuacao} pontos</p>
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">Status</p>
-        <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminhado'}</p>
-      </div>
-    </div>
-    <div>
-      <p className="text-sm text-muted-foreground mb-2">Respostas individuais</p>
-      <div className="grid grid-cols-7 gap-2">
-        {resposta.respostas.map((resp, index) => (
-          <div key={index} className="text-center p-2 bg-muted rounded">
-            <p className="text-xs text-muted-foreground">Q{index + 1}</p>
-            <p className="font-bold">{resp}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-</DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Detalhes da Avaliação - {resposta.aluno_nome}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Data</p>
+                                      <p className="font-medium">{new Date(resposta.data_envio).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Série</p>
+                                      <p className="font-medium">{getSerieNome(resposta.serie_id)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Resultado</p>
+                                      <div className="mt-1">{getResultadoBadge(resposta.resultado)}</div>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Pontuação</p>
+                                      <p className="font-medium">{resposta.pontuacao} pontos</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-muted-foreground">Status</p>
+                                      <p className="font-medium">{resposta.encaminhado ? 'Encaminhado' : 'Não encaminhado'}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-muted-foreground mb-2">Respostas individuais</p>
+                                    <div className="grid grid-cols-7 gap-2">
+                                      {resposta.respostas.map((resp, index) => (
+                                        <div key={index} className="text-center p-2 bg-muted rounded">
+                                          <p className="text-xs text-muted-foreground">Q{index + 1}</p>
+                                          <p className="font-bold">{resp}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
                             </Dialog>
                             <Button
                               variant="default"
@@ -645,33 +706,33 @@ const Dashboard = () => {
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">Nenhuma série cadastrada.</p>
                     </div>
-                   ) : (
-                     series.map((serie) => (
-                       <div key={serie.id} className="flex flex-col sm:flex Кабелна телевизия-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4">
-                         <div className="flex items-center gap-3 flex-1">
-                           <div className="flex-1">
-                             <p className="font-medium">{serie.nome}</p>
-                             <p className="text-sm text-muted-foreground">
-                               Status: {serie.ativa ? 'Ativa' : 'Inativa'}
-                             </p>
-                           </div>
-                           {serie.ativa && (
-                             <Badge variant="outline" className="text-emoteen-green border-emoteen-green">
-                               Ativa
-                             </Badge>
-                           )}
-                         </div>
-                         <Button
-                           variant={serie.ativa ? "destructive" : "default"}
-                           size="sm"
-                           onClick={() => handleToggleSerie(serie.id, serie.ativa)}
-                           className="w-full sm:w-auto"
-                         >
-                           {serie.ativa ? 'Desativar' : 'Ativar'}
-                         </Button>
-                       </div>
-                     ))
-                   )}
+                  ) : (
+                    series.map((serie) => (
+                      <div key={serie.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="flex-1">
+                            <p className="font-medium">{serie.nome}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Status: {serie.ativa ? 'Ativa' : 'Inativa'}
+                            </p>
+                          </div>
+                          {serie.ativa && (
+                            <Badge variant="outline" className="text-emoteen-green border-emoteen-green">
+                              Ativa
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          variant={serie.ativa ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => handleToggleSerie(serie.id, serie.ativa)}
+                          className="w-full sm:w-auto"
+                        >
+                          {serie.ativa ? 'Desativar' : 'Ativar'}
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
