@@ -44,25 +44,47 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                onClick={() => navigate('/login')}
-                size="lg"
-                className="text-lg px-8 py-6 h-auto bg-primary hover:bg-primary/90"
-              >
-                Fazer Avaliação
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => navigate('/dashboard')}
-                className="text-lg px-8 py-6 h-auto"
-              >
-                Acesso Escolar
-                <Shield className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              onClick={() => navigate('/login')}
+              size="lg"
+              className="text-lg px-8 py-6 h-auto bg-primary hover:bg-primary/90"
+            >
+              Fazer Avaliação
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => navigate('/dashboard')}
+              className="text-lg px-8 py-6 h-auto"
+            >
+              Acesso Escolar
+              <Shield className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Acesso Profissionais */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <Button 
+              variant="secondary" 
+              size="lg"
+              onClick={() => navigate('/dashboard-terapeuta')}
+              className="text-lg px-8 py-6 h-auto"
+            >
+              Dashboard Terapeuta
+              <HeadphonesIcon className="ml-2 w-5 h-5" />
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="lg"
+              onClick={() => navigate('/dashboard-psicologo')}
+              className="text-lg px-8 py-6 h-auto"
+            >
+              Dashboard Psicólogo
+              <UserCheck className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
           </div>
 
           {/* Features */}

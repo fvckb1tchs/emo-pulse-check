@@ -11,6 +11,9 @@ import NotFound from "./pages/NotFound";
 import ConsentimentoResponsavel from "./pages/ConsentimentoResponsavel";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
+import DashboardTerapeuta from "./pages/DashboardTerapeuta";
+import DashboardPsicologo from "./pages/DashboardPsicologo";
+import AvaliacaoPos from "./pages/AvaliacaoPos";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/consentimento" element={<ConsentimentoResponsavel />} />
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard-terapeuta" element={<DashboardTerapeuta />} />
+          <Route path="/dashboard-psicologo" element={<DashboardPsicologo />} />
+          <Route path="/avaliacao-pos" element={<AvaliacaoPos />} />
           <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
           <Route path="/termos-de-uso" element={<TermosUso />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
+import { DEMO_MODE } from "@/config";
 import { 
   Eye, 
   Calendar, 
@@ -82,6 +83,32 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
+      if (DEMO_MODE) {
+        // Demo login - sempre aceita credenciais de demo
+        if (email === "demo@escola.com" && senha === "demo123") {
+          setIsAuthenticated(true);
+          setEscola("Escola Demo");
+          setEscolaId("demo-id");
+          sessionStorage.setItem('adminAuthenticated', 'true');
+          sessionStorage.setItem('escolaAdminId', 'demo-id');
+          toast({
+            title: "Acesso autorizado! (Demo Mode)",
+            description: "Bem-vindo ao dashboard de demonstração",
+          });
+          
+          // Carregar dados demo
+          loadDemoData();
+          return;
+        } else {
+          toast({
+            title: "Credenciais demo",
+            description: "Use email: demo@escola.com e senha: demo123",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+
       const { data: escolaData, error } = await supabase
         .from('escolas')
         .select('*')
@@ -137,7 +164,58 @@ const Dashboard = () => {
     }
   };
 
+  const loadDemoData = () => {
+    // Carregar dados de demonstração
+    const demoRespostas: RespostaQuiz[] = [
+      {
+        id: "1",
+        aluno_nome: "Ana Silva",
+        data_envio: new Date(Date.now() - 86400000).toISOString(),
+        resultado: "vermelho",
+        pontuacao: 85,
+        encaminhado: true,
+        respostas: [4, 5, 4, 3, 5, 4, 4, 3, 4, 5, 3, 4, 5, 4, 3, 4, 5, 4, 3, 4, 5, 3, 4, 4, 5, 4, 3, 4, 5, 3, 4, 5, 4, 3, 4],
+        serie_id: "demo-serie-1"
+      },
+      {
+        id: "2", 
+        aluno_nome: "João Santos",
+        data_envio: new Date(Date.now() - 172800000).toISOString(),
+        resultado: "amarelo",
+        pontuacao: 45,
+        encaminhado: false,
+        respostas: [2, 3, 2, 1, 3, 2, 2, 1, 2, 3, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 1, 2, 2, 3, 2, 1, 2, 3, 1, 2, 3, 2, 1, 2],
+        serie_id: "demo-serie-2"
+      },
+      {
+        id: "3",
+        aluno_nome: "Maria Costa",
+        data_envio: new Date(Date.now() - 259200000).toISOString(),
+        resultado: "verde",
+        pontuacao: 15,
+        encaminhado: false,
+        respostas: [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+        serie_id: "demo-serie-1"
+      }
+    ];
+
+    const demoSeries: Serie[] = [
+      { id: "demo-serie-1", nome: "9º Ano", ativa: true, escola_id: "demo-id" },
+      { id: "demo-serie-2", nome: "1º Médio", ativa: true, escola_id: "demo-id" },
+      { id: "demo-serie-3", nome: "2º Médio", ativa: false, escola_id: "demo-id" }
+    ];
+
+    setRespostas(demoRespostas);
+    setSeries(demoSeries);
+    setTotalAlunos(25);
+  };
+
   const loadRespostas = async (escolaId: string) => {
+    if (DEMO_MODE) {
+      loadDemoData();
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('respostas_quiz')
@@ -161,6 +239,8 @@ const Dashboard = () => {
   };
 
   const loadSeries = async (escolaId: string) => {
+    if (DEMO_MODE) return; // Séries já carregadas no loadDemoData
+
     try {
       const { data, error } = await supabase
         .from('series')
@@ -189,6 +269,33 @@ const Dashboard = () => {
     setAgendandoSessao(resposta.id);
     
     try {
+      if (DEMO_MODE) {
+        // Simular solicitação em demo mode
+        const sessoesAgendadas = JSON.parse(localStorage.getItem('sessoes_agendadas') || '[]');
+        sessoesAgendadas.push({
+          id: Date.now().toString(),
+          escolaNome: escola,
+          alunoNome: resposta.aluno_nome,
+          dataAgendada: new Date().toISOString(),
+          status: 'pendente',
+          resultado: resposta.resultado,
+          pontuacao: resposta.pontuacao
+        });
+        localStorage.setItem('sessoes_agendadas', JSON.stringify(sessoesAgendadas));
+        
+        // Marcar como encaminhado
+        const novasRespostas = respostas.map(r => 
+          r.id === resposta.id ? { ...r, encaminhado: true } : r
+        );
+        setRespostas(novasRespostas);
+        
+        toast({
+          title: "Sessão solicitada! 📅",
+          description: `Solicitação enviada para EmoTeen. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('agendar-sessao', {
         body: {
           alunoNome: resposta.aluno_nome,
@@ -202,14 +309,14 @@ const Dashboard = () => {
       if (error) throw error;
 
       toast({
-        title: "Sessão agendada! 📅",
+        title: "Sessão solicitada! 📅",
         description: `Solicitação enviada para EmoTeen. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
       });
     } catch (error) {
-      console.error('Erro ao agendar sessão:', error);
+      console.error('Erro ao solicitar sessão:', error);
       toast({
-        title: "Erro ao agendar",
-        description: "Não foi possível agendar a sessão. Tente novamente.",
+        title: "Erro ao solicitar",
+        description: "Não foi possível solicitar a sessão. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -335,27 +442,33 @@ const Dashboard = () => {
     if (isAuth && escolaId) {
       setIsAuthenticated(true);
       setEscolaId(escolaId);
-      // Carregar dados da escola específica
-      loadRespostas(escolaId);
-      loadSeries(escolaId);
+      
+      if (DEMO_MODE && escolaId === 'demo-id') {
+        setEscola("Escola Demo");
+        loadDemoData();
+      } else {
+        // Carregar dados da escola específica
+        loadRespostas(escolaId);
+        loadSeries(escolaId);
 
-      // Buscar dados da escola para o nome
-      supabase
-        .from('escolas')
-        .select('nome')
-        .eq('id', escolaId)
-        .single()
-        .then(({ data }) => {
-          if (data) setEscola(data.nome);
-        });
+        // Buscar dados da escola para o nome
+        supabase
+          .from('escolas')
+          .select('nome')
+          .eq('id', escolaId)
+          .single()
+          .then(({ data }) => {
+            if (data) setEscola(data.nome);
+          });
 
-      // Contar alunos com consentimento ativo
-      supabase
-        .from('consentimento_responsavel')
-        .select('*', { count: 'exact', head: true })
-        .eq('escola_id', escolaId)
-        .eq('ativo', true)
-        .then(({ count }) => setTotalAlunos(count || 0));
+        // Contar alunos com consentimento ativo
+        supabase
+          .from('consentimento_responsavel')
+          .select('*', { count: 'exact', head: true })
+          .eq('escola_id', escolaId)  
+          .eq('ativo', true)
+          .then(({ count }) => setTotalAlunos(count || 0));
+      }
     }
   }, []);
 
@@ -409,7 +522,7 @@ const Dashboard = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@escola.com"
+                  placeholder={DEMO_MODE ? "demo@escola.com" : "admin@escola.com"}
                   required
                 />
               </div>
@@ -420,10 +533,17 @@ const Dashboard = () => {
                   type="password"
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder="Digite sua senha"
+                  placeholder={DEMO_MODE ? "demo123" : "Digite sua senha"}
                   required
                 />
               </div>
+              {DEMO_MODE && (
+                <div className="text-sm text-muted-foreground text-center">
+                  <p><strong>Credenciais Demo:</strong></p>
+                  <p>Email: demo@escola.com</p>
+                  <p>Senha: demo123</p>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
@@ -650,10 +770,10 @@ const Dashboard = () => {
                             >
                               <CalendarPlus className="w-4 h-4" />
                               <span className="hidden sm:inline">
-                                {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar Sessão'}
+                                {agendandoSessao === resposta.id ? 'Solicitando...' : 'Solicitar Sessão'}
                               </span>
                               <span className="sm:hidden">
-                                {agendandoSessao === resposta.id ? 'Agendando...' : 'Agendar'}
+                                {agendandoSessao === resposta.id ? 'Solicitando...' : 'Solicitar'}
                               </span>
                             </Button>
                           </div>
