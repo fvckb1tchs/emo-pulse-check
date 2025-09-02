@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, CheckCircle, AlertCircle, Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar, Clock, User, CheckCircle, AlertCircle, Plus, LogOut, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ interface SessaoAgendada {
 }
 
 const DashboardTerapeuta = () => {
+  const navigate = useNavigate();
   const [sessoes, setSessoes] = useState<SessaoAgendada[]>([]);
   const [dialogAberto, setDialogAberto] = useState(false);
   const [sessaoSelecionada, setSessaoSelecionada] = useState<SessaoAgendada | null>(null);
@@ -30,8 +32,26 @@ const DashboardTerapeuta = () => {
   const [observacoes, setObservacoes] = useState("");
 
   useEffect(() => {
+    verificarAutenticacao();
     carregarSessoes();
   }, []);
+
+  const verificarAutenticacao = () => {
+    if (DEMO_MODE) {
+      const isLoggedIn = sessionStorage.getItem('terapeuta_loggedIn');
+      if (!isLoggedIn) {
+        navigate('/login-profissional');
+        return;
+      }
+    }
+  };
+
+  const logout = () => {
+    if (DEMO_MODE) {
+      sessionStorage.removeItem('terapeuta_loggedIn');
+      navigate('/');
+    }
+  };
 
   const carregarSessoes = () => {
     if (DEMO_MODE) {
@@ -132,80 +152,106 @@ const DashboardTerapeuta = () => {
   const sessoesRealizadas = sessoes.filter(s => s.status === 'realizada');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-3 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard Terapeuta</h1>
-            <p className="text-muted-foreground">Gerencie suas sessões e atendimentos</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard Terapeuta</h1>
+              <p className="text-sm text-muted-foreground">Gerencie suas sessões e atendimentos</p>
+            </div>
           </div>
-          <div className="flex gap-4">
-            <Card className="p-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-emoteen-red" />
-                <div>
-                  <p className="text-sm font-medium">Pendentes</p>
-                  <p className="text-2xl font-bold">{sessoesPendentes.length}</p>
-                </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={logout}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair
+          </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emoteen-red" />
+              <div>
+                <p className="text-xs sm:text-sm font-medium">Pendentes</p>
+                <p className="text-lg sm:text-2xl font-bold">{sessoesPendentes.length}</p>
               </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-emoteen-blue" />
-                <div>
-                  <p className="text-sm font-medium">Agendadas</p>
-                  <p className="text-2xl font-bold">{sessoesAgendadas.length}</p>
-                </div>
+            </div>
+          </Card>
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-emoteen-blue" />
+              <div>
+                <p className="text-xs sm:text-sm font-medium">Agendadas</p>
+                <p className="text-lg sm:text-2xl font-bold">{sessoesAgendadas.length}</p>
               </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emoteen-green" />
-                <div>
-                  <p className="text-sm font-medium">Realizadas</p>
-                  <p className="text-2xl font-bold">{sessoesRealizadas.length}</p>
-                </div>
+            </div>
+          </Card>
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emoteen-green" />
+              <div>
+                <p className="text-xs sm:text-sm font-medium">Realizadas</p>
+                <p className="text-lg sm:text-2xl font-bold">{sessoesRealizadas.length}</p>
               </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
         </div>
 
         {/* Sessões Pendentes */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <AlertCircle className="w-5 h-5 text-emoteen-red" />
-              Sessões Pendentes de Agendamento
+              Sessões Pendentes
             </CardTitle>
           </CardHeader>
           <CardContent>
             {sessoesPendentes.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">Nenhuma sessão pendente</p>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {sessoesPendentes.map(sessao => (
-                  <div key={sessao.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
+                  <div key={sessao.id} className="border rounded-lg p-3 sm:p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-2">
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{sessao.alunoNome}</span>
+                            <span className="font-medium text-sm sm:text-base">{sessao.alunoNome}</span>
                           </div>
-                          <Badge variant="outline">{sessao.escolaNome}</Badge>
-                          <Badge className={getResultadoColor(sessao.resultado || '')}>
-                            {sessao.resultado?.toUpperCase()} ({sessao.pontuacao} pts)
+                          <Badge variant="outline" className="text-xs">{sessao.escolaNome}</Badge>
+                          <Badge className={`${getResultadoColor(sessao.resultado || '')} text-xs`}>
+                            {sessao.resultado?.toUpperCase()} ({sessao.pontuacao}pts)
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4" />
-                          Solicitado em {new Date(sessao.dataAgendada).toLocaleDateString('pt-BR')}
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                          {new Date(sessao.dataAgendada).toLocaleDateString('pt-BR')}
                         </div>
                       </div>
-                      <Button onClick={() => agendarSessao(sessao)} className="flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        Agendar Sessão
+                      <Button 
+                        onClick={() => agendarSessao(sessao)} 
+                        size="sm"
+                        className="flex items-center gap-2 text-xs sm:text-sm"
+                      >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                        Agendar
                       </Button>
                     </div>
                   </div>
@@ -215,133 +261,55 @@ const DashboardTerapeuta = () => {
           </CardContent>
         </Card>
 
-        {/* Sessões Agendadas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emoteen-blue" />
-              Sessões Agendadas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sessoesAgendadas.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Nenhuma sessão agendada</p>
-            ) : (
-              <div className="grid gap-4">
-                {sessoesAgendadas.map(sessao => (
-                  <div key={sessao.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{sessao.alunoNome}</span>
-                          </div>
-                          <Badge variant="outline">{sessao.escolaNome}</Badge>
-                          <Badge className={getStatusColor(sessao.status)}>AGENDADA</Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span>Link: <a href={sessao.linkSessao} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{sessao.linkSessao}</a></span>
-                        </div>
-                        {sessao.observacoes && (
-                          <div className="text-sm text-muted-foreground">
-                            <strong>Observações:</strong> {sessao.observacoes}
-                          </div>
-                        )}
-                      </div>
-                      <Button onClick={() => marcarComoRealizada(sessao.id)} variant="outline">
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Marcar como Realizada
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Sessões Realizadas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-emoteen-green" />
-              Sessões Realizadas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sessoesRealizadas.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Nenhuma sessão realizada</p>
-            ) : (
-              <div className="grid gap-4">
-                {sessoesRealizadas.map(sessao => (
-                  <div key={sessao.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{sessao.alunoNome}</span>
-                          </div>
-                          <Badge variant="outline">{sessao.escolaNome}</Badge>
-                          <Badge className={getStatusColor(sessao.status)}>REALIZADA</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Dialog de Agendamento */}
-      <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Agendar Sessão</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {sessaoSelecionada && (
+        {/* Dialog de Agendamento */}
+        <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg">Agendar Sessão</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {sessaoSelecionada && (
+                <div className="space-y-2 p-3 bg-muted rounded-lg">
+                  <p className="text-sm"><strong>Aluno:</strong> {sessaoSelecionada.alunoNome}</p>
+                  <p className="text-sm"><strong>Escola:</strong> {sessaoSelecionada.escolaNome}</p>
+                  <Badge className={`${getResultadoColor(sessaoSelecionada.resultado || '')} text-xs`}>
+                    {sessaoSelecionada.resultado?.toUpperCase()} ({sessaoSelecionada.pontuacao}pts)
+                  </Badge>
+                </div>
+              )}
               <div className="space-y-2">
-                <p><strong>Aluno:</strong> {sessaoSelecionada.alunoNome}</p>
-                <p><strong>Escola:</strong> {sessaoSelecionada.escolaNome}</p>
-                <Badge className={getResultadoColor(sessaoSelecionada.resultado || '')}>
-                  {sessaoSelecionada.resultado?.toUpperCase()} ({sessaoSelecionada.pontuacao} pts)
-                </Badge>
+                <Label htmlFor="link" className="text-sm">Link da Sessão *</Label>
+                <Input
+                  id="link"
+                  value={linkSessao}
+                  onChange={(e) => setLinkSessao(e.target.value)}
+                  placeholder="https://meet.google.com/..."
+                  className="text-sm"
+                />
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="link">Link da Sessão *</Label>
-              <Input
-                id="link"
-                value={linkSessao}
-                onChange={(e) => setLinkSessao(e.target.value)}
-                placeholder="https://meet.google.com/..."
-              />
+              <div className="space-y-2">
+                <Label htmlFor="observacoes" className="text-sm">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Observações sobre a sessão..."
+                  rows={3}
+                  className="text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={salvarAgendamento} className="flex-1 text-sm">
+                  Confirmar
+                </Button>
+                <Button variant="outline" onClick={() => setDialogAberto(false)} className="text-sm">
+                  Cancelar
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Observações sobre a sessão..."
-                rows={3}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={salvarAgendamento} className="flex-1">
-                Confirmar Agendamento
-              </Button>
-              <Button variant="outline" onClick={() => setDialogAberto(false)}>
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

@@ -69,19 +69,19 @@ const Index = () => {
             <Button 
               variant="secondary" 
               size="lg"
-              onClick={() => navigate('/dashboard-terapeuta')}
+              onClick={() => navigate('/login-profissional')}
               className="text-lg px-8 py-6 h-auto"
             >
-              Dashboard Terapeuta
+              Acesso Terapeuta
               <HeadphonesIcon className="ml-2 w-5 h-5" />
             </Button>
             <Button 
               variant="secondary" 
               size="lg"
-              onClick={() => navigate('/dashboard-psicologo')}
+              onClick={() => navigate('/login-profissional')}
               className="text-lg px-8 py-6 h-auto"
             >
-              Dashboard Psicólogo
+              Acesso Psicólogo
               <UserCheck className="ml-2 w-5 h-5" />
             </Button>
           </div>
