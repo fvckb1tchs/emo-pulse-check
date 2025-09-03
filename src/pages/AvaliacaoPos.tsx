@@ -8,6 +8,7 @@ import { CheckCircle, Heart, Frown, Meh, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { DEMO_MODE } from "@/config";
 import EmoTeenLogo from "@/components/EmoTeenLogo";
+import { supabase } from "@/integrations/supabase/client";
 
 const AvaliacaoPos = () => {
   const navigate = useNavigate();
@@ -16,15 +17,18 @@ const AvaliacaoPos = () => {
   const [comentarios, setComentarios] = useState("");
   const [alunoNome, setAlunoNome] = useState("");
   const [escolaNome, setEscolaNome] = useState("");
+  const [sessaoId, setSessaoId] = useState("");
   const [enviado, setEnviado] = useState(false);
 
   useEffect(() => {
-    // Capturar dados da URL ou sessionStorage
-    const aluno = searchParams.get('aluno') || sessionStorage.getItem('alunoNome') || '';
-    const escola = searchParams.get('escola') || sessionStorage.getItem('escolaNome') || '';
+    // Capturar dados da URL
+    const aluno = searchParams.get('aluno') || '';
+    const escola = searchParams.get('escola') || '';
+    const sessao_id = searchParams.get('sessao') || '';
     
     setAlunoNome(aluno);
     setEscolaNome(escola);
+    setSessaoId(sessao_id);
 
     if (!aluno || !escola) {
       toast.error("Dados da sessão não encontrados");
@@ -39,25 +43,45 @@ const AvaliacaoPos = () => {
       return;
     }
 
-    if (DEMO_MODE) {
-      // Salvar no localStorage em demo mode
-      const avaliacao = {
-        id: Date.now().toString(),
-        alunoNome,
-        escolaNome,
-        avaliacao: avaliacaoSelecionada,
-        comentarios,
-        dataAvaliacao: new Date().toISOString()
-      };
+    try {
+      if (DEMO_MODE) {
+        // Salvar no localStorage para demo
+        const avaliacoes = JSON.parse(localStorage.getItem('avaliacoes_pos_sessao') || '[]');
+        avaliacoes.push({
+          id: Date.now().toString(),
+          aluno_nome: alunoNome,
+          escola_nome: escolaNome,
+          sessao_id: sessaoId || 'demo-sessao',
+          avaliacao: avaliacaoSelecionada,
+          comentarios: comentarios.trim() || undefined,
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem('avaliacoes_pos_sessao', JSON.stringify(avaliacoes));
+        
+        toast.success("Obrigado pelo seu feedback! Sua avaliação foi enviada.");
+        setEnviado(true);
+        return;
+      }
 
-      const avaliacoes = JSON.parse(localStorage.getItem('avaliacoes_pos_sessao') || '[]');
-      avaliacoes.push(avaliacao);
-      localStorage.setItem('avaliacoes_pos_sessao', JSON.stringify(avaliacoes));
-      
-      toast.success("Sua avaliação foi enviada com sucesso!");
+      // Inserir no banco de dados real
+      const { error } = await supabase
+        .from('avaliacoes_pos_sessao')
+        .insert({
+          sessao_id: sessaoId,
+          aluno_nome: alunoNome,
+          escola_nome: escolaNome,
+          avaliacao: avaliacaoSelecionada,
+          comentarios: comentarios.trim() || null
+        });
+
+      if (error) throw error;
+
+      toast.success("Obrigado pelo seu feedback! Sua avaliação foi enviada.");
+      setEnviado(true);
+    } catch (error) {
+      console.error('Erro ao enviar avaliação:', error);
+      toast.error("Erro ao enviar avaliação. Tente novamente.");
     }
-
-    setEnviado(true);
   };
 
   const opcoes = [

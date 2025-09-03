@@ -291,26 +291,42 @@ const Dashboard = () => {
         
         toast({
           title: "Sessão solicitada! 📅",
-          description: `Solicitação enviada para EmoTeen. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
+          description: `Solicitação enviada para o psicólogo. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
         });
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('agendar-sessao', {
-        body: {
-          alunoNome: resposta.aluno_nome,
-          escolaNome: escola || 'Escola não identificada',
+      // Inserir diretamente na tabela de sessões agendadas
+      const { error } = await supabase
+        .from('sessoes_agendadas')
+        .insert({
+          escola_id: escolaId,
+          aluno_nome: resposta.aluno_nome,
+          escola_nome: escola,
           resultado: resposta.resultado,
           pontuacao: resposta.pontuacao,
-          dataEnvio: resposta.data_envio
-        }
-      });
+          status: 'pendente'
+        });
 
       if (error) throw error;
 
+      // Marcar como encaminhado
+      const { error: updateError } = await supabase
+        .from('respostas_quiz')
+        .update({ encaminhado: true })
+        .eq('id', resposta.id);
+
+      if (updateError) throw updateError;
+
+      // Atualizar estado local
+      const novasRespostas = respostas.map(r => 
+        r.id === resposta.id ? { ...r, encaminhado: true } : r
+      );
+      setRespostas(novasRespostas);
+
       toast({
         title: "Sessão solicitada! 📅",
-        description: `Solicitação enviada para EmoTeen. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
+        description: `Solicitação enviada para o psicólogo. O aluno ${resposta.aluno_nome} receberá contato em breve.`,
       });
     } catch (error) {
       console.error('Erro ao solicitar sessão:', error);

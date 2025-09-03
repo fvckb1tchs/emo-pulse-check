@@ -7,13 +7,51 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      avaliacoes_pos_sessao: {
+        Row: {
+          aluno_nome: string
+          avaliacao: string
+          comentarios: string | null
+          created_at: string
+          escola_nome: string
+          id: string
+          sessao_id: string
+        }
+        Insert: {
+          aluno_nome: string
+          avaliacao: string
+          comentarios?: string | null
+          created_at?: string
+          escola_nome: string
+          id?: string
+          sessao_id: string
+        }
+        Update: {
+          aluno_nome?: string
+          avaliacao?: string
+          comentarios?: string | null
+          created_at?: string
+          escola_nome?: string
+          id?: string
+          sessao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_pos_sessao_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_agendadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consentimento_responsavel: {
         Row: {
           aluno_nome: string
@@ -113,6 +151,50 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios_sessao: {
+        Row: {
+          created_at: string
+          diagnostico: string
+          id: string
+          observacoes: string | null
+          proximos_passos: string | null
+          recomendacoes: string
+          sessao_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          diagnostico: string
+          id?: string
+          observacoes?: string | null
+          proximos_passos?: string | null
+          recomendacoes: string
+          sessao_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          diagnostico?: string
+          id?: string
+          observacoes?: string | null
+          proximos_passos?: string | null
+          recomendacoes?: string
+          sessao_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_sessao_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_agendadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       respostas_quiz: {
         Row: {
           aluno_nome: string
@@ -196,6 +278,60 @@ export type Database = {
           },
         ]
       }
+      sessoes_agendadas: {
+        Row: {
+          aluno_nome: string
+          created_at: string
+          data_agendada: string | null
+          data_encaminhamento: string
+          data_realizacao: string | null
+          escola_id: string
+          escola_nome: string
+          id: string
+          link_sessao: string | null
+          observacoes: string | null
+          pontuacao: number
+          resultado: string
+          status: string
+          terapeuta_nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          aluno_nome: string
+          created_at?: string
+          data_agendada?: string | null
+          data_encaminhamento?: string
+          data_realizacao?: string | null
+          escola_id: string
+          escola_nome: string
+          id?: string
+          link_sessao?: string | null
+          observacoes?: string | null
+          pontuacao: number
+          resultado: string
+          status?: string
+          terapeuta_nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aluno_nome?: string
+          created_at?: string
+          data_agendada?: string | null
+          data_encaminhamento?: string
+          data_realizacao?: string | null
+          escola_id?: string
+          escola_nome?: string
+          id?: string
+          link_sessao?: string | null
+          observacoes?: string | null
+          pontuacao?: number
+          resultado?: string
+          status?: string
+          terapeuta_nome?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sessoes_monitoramento: {
         Row: {
           aluno_nome: string | null
@@ -237,12 +373,12 @@ export type Database = {
       }
       log_action: {
         Args: {
-          p_user_id?: string
-          p_escola_id?: string
           p_acao?: string
           p_detalhes?: Json
+          p_escola_id?: string
           p_ip_address?: string
           p_user_agent?: string
+          p_user_id?: string
         }
         Returns: undefined
       }
