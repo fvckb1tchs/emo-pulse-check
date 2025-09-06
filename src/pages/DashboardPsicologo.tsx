@@ -61,10 +61,7 @@ const DashboardPsicologo = () => {
   const [linkSessao, setLinkSessao] = useState("");
   const [observacoesSessao, setObservacoesSessao] = useState("");
   const [relatorioForm, setRelatorioForm] = useState({
-    diagnostico: "",
-    recomendacoes: "",
-    proximosPassos: "",
-    observacoes: ""
+    progressoAluno: ""
   });
 
   useEffect(() => {
@@ -189,10 +186,7 @@ const DashboardPsicologo = () => {
   const abrirDialogRelatorio = (sessao: SessaoAgendada) => {
     setSessaoSelecionada(sessao);
     setRelatorioForm({
-      diagnostico: "",
-      recomendacoes: "",
-      proximosPassos: "",
-      observacoes: ""
+      progressoAluno: ""
     });
     setDialogRelatorio(true);
   };
@@ -279,27 +273,51 @@ const DashboardPsicologo = () => {
   };
 
   const enviarRelatorio = async () => {
-    if (!sessaoSelecionada || !relatorioForm.diagnostico.trim() || !relatorioForm.recomendacoes.trim()) {
-      toast.error("Por favor, preencha os campos obrigatórios");
+    if (!sessaoSelecionada || !relatorioForm.progressoAluno.trim()) {
+      toast.error("Por favor, preencha o progresso do aluno");
       return;
     }
 
     try {
       if (DEMO_MODE) {
+        // Enviar via edge function para Resend
+        const response = await supabase.functions.invoke('enviar-relatorio', {
+          body: {
+            alunoNome: sessaoSelecionada.aluno_nome,
+            escolaNome: sessaoSelecionada.escola_nome,
+            progressoAluno: relatorioForm.progressoAluno,
+            terapeutaNome: "Dr. João Psicólogo",
+            dataRealizacao: sessaoSelecionada.data_realizacao || new Date().toISOString()
+          }
+        });
+
+        if (response.error) throw response.error;
         toast.success("Relatório enviado para a escola com sucesso!");
       } else {
+        // Salvar no banco e enviar via edge function
         const { error } = await supabase
           .from('relatorios_sessao')
           .insert({
             sessao_id: sessaoSelecionada.id,
-            diagnostico: relatorioForm.diagnostico,
-            recomendacoes: relatorioForm.recomendacoes,
-            proximos_passos: relatorioForm.proximosPassos,
-            observacoes: relatorioForm.observacoes,
+            diagnostico: "Progresso do aluno na avaliação",
+            recomendacoes: relatorioForm.progressoAluno,
             status: 'enviado'
           });
 
         if (error) throw error;
+
+        // Enviar via edge function para Resend
+        const response = await supabase.functions.invoke('enviar-relatorio', {
+          body: {
+            alunoNome: sessaoSelecionada.aluno_nome,
+            escolaNome: sessaoSelecionada.escola_nome,
+            progressoAluno: relatorioForm.progressoAluno,
+            terapeutaNome: sessaoSelecionada.terapeuta_nome || "Psicólogo EmoTeen",
+            dataRealizacao: sessaoSelecionada.data_realizacao || new Date().toISOString()
+          }
+        });
+
+        if (response.error) throw response.error;
         toast.success("Relatório enviado para a escola com sucesso!");
         carregarDados();
       }
@@ -310,6 +328,7 @@ const DashboardPsicologo = () => {
 
     setDialogRelatorio(false);
     setSessaoSelecionada(null);
+    setRelatorioForm({ progressoAluno: "" });
   };
 
   const getAvaliacaoColor = (avaliacao: string) => {
@@ -711,55 +730,19 @@ const DashboardPsicologo = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="diagnostico" className="text-sm">Diagnóstico/Avaliação *</Label>
+              <Label htmlFor="progressoAluno" className="text-sm">Progresso do Aluno na Avaliação *</Label>
               <Textarea
-                id="diagnostico"
-                value={relatorioForm.diagnostico}
-                onChange={(e) => setRelatorioForm(prev => ({ ...prev, diagnostico: e.target.value }))}
-                placeholder="Descrição do diagnóstico ou avaliação do caso..."
-                rows={4}
+                id="progressoAluno"
+                value={relatorioForm.progressoAluno}
+                onChange={(e) => setRelatorioForm(prev => ({ ...prev, progressoAluno: e.target.value }))}
+                placeholder="Descreva o progresso observado durante a sessão com o aluno..."
+                rows={6}
                 disabled={false}
                 className="text-sm"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="recomendacoes" className="text-sm">Recomendações *</Label>
-              <Textarea
-                id="recomendacoes"
-                value={relatorioForm.recomendacoes}
-                onChange={(e) => setRelatorioForm(prev => ({ ...prev, recomendacoes: e.target.value }))}
-                placeholder="Recomendações para a escola e família..."
-                rows={4}
-                disabled={false}
-                className="text-sm"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="proximosPassos" className="text-sm">Próximos Passos</Label>
-              <Textarea
-                id="proximosPassos"
-                value={relatorioForm.proximosPassos}
-                onChange={(e) => setRelatorioForm(prev => ({ ...prev, proximosPassos: e.target.value }))}
-                placeholder="Próximos passos no tratamento..."
-                rows={3}
-                disabled={false}
-                className="text-sm"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="observacoes" className="text-sm">Observações Adicionais</Label>
-              <Textarea
-                id="observacoes"
-                value={relatorioForm.observacoes}
-                onChange={(e) => setRelatorioForm(prev => ({ ...prev, observacoes: e.target.value }))}
-                placeholder="Observações adicionais sobre a sessão..."
-                rows={3}
-                disabled={false}
-                className="text-sm"
-              />
+              <p className="text-xs text-muted-foreground">
+                Relate como foi a sessão, evolução do aluno e observações relevantes para a escola.
+              </p>
             </div>
 
             <div className="flex gap-2">
