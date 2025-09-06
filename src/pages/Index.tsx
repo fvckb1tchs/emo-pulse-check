@@ -65,16 +65,7 @@ const Index = () => {
           </div>
 
           {/* Acesso Profissionais */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button 
-              variant="secondary" 
-              size="lg"
-              onClick={() => navigate('/login-profissional')}
-              className="text-lg px-8 py-6 h-auto"
-            >
-              Acesso Terapeuta
-              <HeadphonesIcon className="ml-2 w-5 h-5" />
-            </Button>
+          <div className="flex justify-center pt-4">
             <Button 
               variant="secondary" 
               size="lg"

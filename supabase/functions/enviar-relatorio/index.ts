@@ -12,7 +12,6 @@ interface EnviarRelatorioRequest {
   alunoNome: string;
   escolaNome: string;
   progressoAluno: string;
-  terapeutaNome: string;
   dataRealizacao: string;
 }
 
@@ -23,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { alunoNome, escolaNome, progressoAluno, terapeutaNome, dataRealizacao }: EnviarRelatorioRequest = await req.json();
+    const { alunoNome, escolaNome, progressoAluno, dataRealizacao }: EnviarRelatorioRequest = await req.json();
 
     console.log("Enviando relatório para:", { alunoNome, escolaNome });
 
@@ -39,7 +38,7 @@ const handler = async (req: Request): Promise<Response> => {
             <h2 style="color: #333; margin-top: 0;">Informações da Sessão</h2>
             <p><strong>Aluno:</strong> ${alunoNome}</p>
             <p><strong>Escola:</strong> ${escolaNome}</p>
-            <p><strong>Terapeuta/Psicólogo:</strong> ${terapeutaNome}</p>
+            <p><strong>Psicólogo:</strong> Psicólogo EmoTeen</p>
             <p><strong>Data da Sessão:</strong> ${new Date(dataRealizacao).toLocaleDateString('pt-BR')}</p>
           </div>
 

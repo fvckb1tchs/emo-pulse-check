@@ -26,7 +26,6 @@ interface SessaoAgendada {
   observacoes?: string;
   data_agendada?: string;
   data_realizacao?: string;
-  terapeuta_nome?: string;
 }
 
 interface RelatorioSessao {
@@ -123,8 +122,7 @@ const DashboardPsicologo = () => {
           resultado: "amarelo",
           pontuacao: 55,
           status: "realizada",
-          data_realizacao: new Date(Date.now() - 86400000).toISOString(),
-          terapeuta_nome: "Dr. João Psicólogo"
+          data_realizacao: new Date(Date.now() - 86400000).toISOString()
         }
       ];
 
@@ -286,7 +284,6 @@ const DashboardPsicologo = () => {
             alunoNome: sessaoSelecionada.aluno_nome,
             escolaNome: sessaoSelecionada.escola_nome,
             progressoAluno: relatorioForm.progressoAluno,
-            terapeutaNome: "Dr. João Psicólogo",
             dataRealizacao: sessaoSelecionada.data_realizacao || new Date().toISOString()
           }
         });
@@ -312,7 +309,6 @@ const DashboardPsicologo = () => {
             alunoNome: sessaoSelecionada.aluno_nome,
             escolaNome: sessaoSelecionada.escola_nome,
             progressoAluno: relatorioForm.progressoAluno,
-            terapeutaNome: sessaoSelecionada.terapeuta_nome || "Psicólogo EmoTeen",
             dataRealizacao: sessaoSelecionada.data_realizacao || new Date().toISOString()
           }
         });

@@ -13,7 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 const LoginProfissional = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    tipo: "",
     email: "",
     senha: ""
   });
@@ -21,7 +20,6 @@ const LoginProfissional = () => {
 
   // Credenciais demo
   const credenciaisDemo = {
-    terapeuta: { email: "terapeuta@emoteen.com", senha: "123456" },
     psicologo: { email: "psicologo@emoteen.com", senha: "123456" }
   };
 
@@ -29,7 +27,7 @@ const LoginProfissional = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.tipo || !formData.email || !formData.senha) {
+    if (!formData.email || !formData.senha) {
       toast.error("Preencha todos os campos");
       setLoading(false);
       return;
@@ -38,10 +36,9 @@ const LoginProfissional = () => {
     try {
       if (DEMO_MODE) {
         // Validação demo
-        const credencial = credenciaisDemo[formData.tipo as keyof typeof credenciaisDemo];
+        const credencial = credenciaisDemo.psicologo;
         
-        if (credencial && 
-            formData.email === credencial.email && 
+        if (formData.email === credencial.email && 
             formData.senha === credencial.senha) {
           
           // Salvar sessão
@@ -115,24 +112,11 @@ const LoginProfissional = () => {
               Acesso Profissional
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Área restrita para terapeutas e psicólogos
+              Área restrita para psicólogos
             </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo de Profissional</Label>
-                <Select value={formData.tipo} onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="terapeuta">Terapeuta</SelectItem>
-                    <SelectItem value="psicologo">Psicólogo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -170,7 +154,7 @@ const LoginProfissional = () => {
               <div className="mt-6 p-4 bg-muted rounded-lg">
                 <h4 className="font-semibold text-sm mb-2">Credenciais Demo:</h4>
                 <div className="space-y-2 text-xs text-muted-foreground">
-                    <strong>Psicólogo/Terapeuta:</strong><br />
+                    <strong>Psicólogo:</strong><br />
                     Email: psicologo@emoteen.com<br />
                     Senha: 123456
                 </div>
