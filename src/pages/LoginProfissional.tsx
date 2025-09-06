@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { DEMO_MODE } from "@/config";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginProfissional = () => {
   const navigate = useNavigate();
@@ -34,31 +35,62 @@ const LoginProfissional = () => {
       return;
     }
 
-    if (DEMO_MODE) {
-      // Validação demo
-      const credencial = credenciaisDemo[formData.tipo as keyof typeof credenciaisDemo];
-      
-      if (credencial && 
-          formData.email === credencial.email && 
-          formData.senha === credencial.senha) {
+    try {
+      if (DEMO_MODE) {
+        // Validação demo
+        const credencial = credenciaisDemo[formData.tipo as keyof typeof credenciaisDemo];
         
-        // Salvar sessão
-        sessionStorage.setItem(`${formData.tipo}_loggedIn`, 'true');
-        
-        // Redirecionar para dashboard correto
-        if (formData.tipo === 'terapeuta') {
-          navigate('/dashboard-terapeuta');
-        } else {
+        if (credencial && 
+            formData.email === credencial.email && 
+            formData.senha === credencial.senha) {
+          
+          // Salvar sessão
+          sessionStorage.setItem('psicologo_loggedIn', 'true');
+          sessionStorage.setItem('profissional_nome', 'Profissional Demo');
+          
+          // Redirecionar sempre para dashboard psicólogo (unificado)
           navigate('/dashboard-psicologo');
+          toast.success(`Login realizado com sucesso!`);
+        } else {
+          toast.error("Credenciais inválidas");
         }
-        
-        toast.success(`Login realizado com sucesso!`);
-      } else {
-        toast.error("Credenciais inválidas");
+        setLoading(false);
+        return;
       }
-    }
 
-    setLoading(false);
+      // Autenticação com banco de dados
+      const { data: profissional, error } = await supabase
+        .from('profissionais')
+        .select('*')
+        .eq('email', formData.email)
+        .eq('ativo', true)
+        .maybeSingle();
+
+      if (error || !profissional) {
+        toast.error("Credenciais inválidas");
+        setLoading(false);
+        return;
+      }
+
+      if (profissional.senha !== formData.senha) {
+        toast.error("Senha incorreta");
+        setLoading(false);
+        return;
+      }
+
+      // Login bem-sucedido
+      sessionStorage.setItem('psicologo_loggedIn', 'true');
+      sessionStorage.setItem('profissional_id', profissional.id);
+      sessionStorage.setItem('profissional_nome', profissional.nome);
+      toast.success(`Bem-vindo, ${profissional.nome}!`);
+      navigate('/dashboard-psicologo');
+
+    } catch (error) {
+      console.error('Erro no login:', error);
+      toast.error("Erro de conexão. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -138,16 +170,9 @@ const LoginProfissional = () => {
               <div className="mt-6 p-4 bg-muted rounded-lg">
                 <h4 className="font-semibold text-sm mb-2">Credenciais Demo:</h4>
                 <div className="space-y-2 text-xs text-muted-foreground">
-                  <div>
-                    <strong>Terapeuta:</strong><br />
-                    Email: terapeuta@emoteen.com<br />
-                    Senha: 123456
-                  </div>
-                  <div>
-                    <strong>Psicólogo:</strong><br />
+                    <strong>Psicólogo/Terapeuta:</strong><br />
                     Email: psicologo@emoteen.com<br />
                     Senha: 123456
-                  </div>
                 </div>
               </div>
             )}

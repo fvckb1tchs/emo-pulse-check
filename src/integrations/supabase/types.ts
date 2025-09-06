@@ -151,6 +151,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profissionais: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          senha: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          nome: string
+          senha: string
+          tipo: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          senha?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       relatorios_sessao: {
         Row: {
           created_at: string
