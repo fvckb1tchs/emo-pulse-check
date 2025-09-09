@@ -14,6 +14,7 @@ import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
 import DashboardPsicologo from "./pages/DashboardPsicologo";
 import AvaliacaoPos from "./pages/AvaliacaoPos";
+import AvaliacaoEstrelas from "./pages/AvaliacaoEstrelas";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard-psicologo" element={<DashboardPsicologo />} />
           <Route path="/avaliacao-pos" element={<AvaliacaoPos />} />
+          <Route path="/avaliacao-estrelas" element={<AvaliacaoEstrelas />} />
           <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
           <Route path="/termos-de-uso" element={<TermosUso />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -43,6 +43,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface RespostaQuiz {
   id: string;
@@ -62,6 +70,20 @@ interface Serie {
   escola_id: string;
 }
 
+interface RelatorioSessao {
+  id: string;
+  sessao_id: string;
+  created_at: string;
+  diagnostico: string;
+  recomendacoes: string;
+  observacoes?: string;
+  status: string;
+  sessoes_agendadas: {
+    aluno_nome: string;
+    data_realizacao: string;
+  };
+}
+
 const Dashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
@@ -77,6 +99,7 @@ const Dashboard = () => {
   const [novaSerie, setNovaSerie] = useState("");
   const { toast } = useToast();
   const [totalAlunos, setTotalAlunos] = useState(0);
+  const [relatorios, setRelatorios] = useState<RelatorioSessao[]>([]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +169,7 @@ const Dashboard = () => {
       // Carregar dados
       loadRespostas(escolaData.id);
       loadSeries(escolaData.id);
+      loadRelatorios(escolaData.id);
       const { count } = await supabase
         .from('consentimento_responsavel')
         .select('*', { count: 'exact', head: true })
@@ -208,6 +232,22 @@ const Dashboard = () => {
     setRespostas(demoRespostas);
     setSeries(demoSeries);
     setTotalAlunos(25);
+    
+    // Demo relatórios
+    setRelatorios([
+      {
+        id: "1",
+        sessao_id: "demo-sessao-1",
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        diagnostico: "Progresso do aluno na avaliação",
+        recomendacoes: "O aluno demonstrou melhora significativa no controle emocional durante a sessão.",
+        status: "enviado",
+        sessoes_agendadas: {
+          aluno_nome: "Ana Silva",
+          data_realizacao: new Date(Date.now() - 86400000).toISOString()
+        }
+      }
+    ]);
   };
 
   const loadRespostas = async (escolaId: string) => {
@@ -252,6 +292,29 @@ const Dashboard = () => {
       setSeries((data || []) as Serie[]);
     } catch (error) {
       console.error('Erro ao carregar séries:', error);
+    }
+  };
+
+  const loadRelatorios = async (escolaId: string) => {
+    if (DEMO_MODE) return; // Relatórios já carregados no loadDemoData
+
+    try {
+      const { data, error } = await supabase
+        .from('relatorios_sessao')
+        .select(`
+          *,
+          sessoes_agendadas (
+            aluno_nome,
+            data_realizacao
+          )
+        `)
+        .eq('sessoes_agendadas.escola_id', escolaId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRelatorios((data || []) as RelatorioSessao[]);
+    } catch (error) {
+      console.error('Erro ao carregar relatórios:', error);
     }
   };
 
@@ -466,6 +529,7 @@ const Dashboard = () => {
         // Carregar dados da escola específica
         loadRespostas(escolaId);
         loadSeries(escolaId);
+        loadRelatorios(escolaId);
 
         // Buscar dados da escola para o nome
         supabase
@@ -593,6 +657,7 @@ const Dashboard = () => {
           <TabsList className="flex w-full gap-2 flex-wrap">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm py-2">Dashboard</TabsTrigger>
             <TabsTrigger value="respostas" className="text-xs sm:text-sm py-2">Respostas dos Alunos</TabsTrigger>
+            <TabsTrigger value="relatorios" className="text-xs sm:text-sm py-2">Relatórios</TabsTrigger>
             <TabsTrigger value="series" className="text-xs sm:text-sm py-2">Gerenciar Séries</TabsTrigger>
           </TabsList>
 
@@ -802,8 +867,65 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="series" className="space-y-6">
-            {/* Adicionar Nova Série */}
+          <TabsContent value="relatorios" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Relatórios de Sessões
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {relatorios.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum relatório encontrado.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Aluno</TableHead>
+                        <TableHead>Data da Sessão</TableHead>
+                        <TableHead>Progresso</TableHead>
+                        <TableHead>Data do Relatório</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {relatorios.map((relatorio) => (
+                        <TableRow key={relatorio.id}>
+                          <TableCell className="font-medium">
+                            {relatorio.sessoes_agendadas?.aluno_nome || 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            {relatorio.sessoes_agendadas?.data_realizacao 
+                              ? new Date(relatorio.sessoes_agendadas.data_realizacao).toLocaleDateString('pt-BR')
+                              : 'N/A'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs truncate" title={relatorio.recomendacoes}>
+                              {relatorio.recomendacoes || 'Sem observações'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(relatorio.created_at).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={relatorio.status === 'enviado' ? 'default' : 'secondary'}>
+                              {relatorio.status === 'enviado' ? 'Enviado' : relatorio.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="series" className="space-y-6">{/* Adicionar Nova Série */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
