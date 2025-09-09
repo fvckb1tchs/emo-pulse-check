@@ -58,6 +58,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Relatório enviado com sucesso:", emailResponse);
 
+    // Enviar também para Web3Forms
+    try {
+      const web3FormsResponse = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          access_key: "7d88b37b-4884-4665-92dc-5c113e5a54bb",
+          subject: `Relatório de Sessão - ${alunoNome} (${escolaNome})`,
+          from_name: "EmoTeen - Sistema de Relatórios",
+          message: `Relatório de sessão realizada em ${new Date(dataRealizacao).toLocaleDateString('pt-BR')}:\n\nAluno: ${alunoNome}\nEscola: ${escolaNome}\n\nProgresso do Aluno na Avaliação:\n${progressoAluno}`,
+        }),
+      });
+
+      const web3FormsResult = await web3FormsResponse.json();
+      console.log("Relatório enviado para Web3Forms:", web3FormsResult);
+    } catch (web3Error) {
+      console.error("Erro ao enviar para Web3Forms (não crítico):", web3Error);
+      // Não falha a operação se Web3Forms der erro
+    }
+
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,
       headers: {
